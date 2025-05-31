@@ -10,9 +10,11 @@ interface createParams {
 export const create = async ({ body, file }: createParams) => {
   if (file) body.avatar = file.path;
 
-  const userCheck = await UserRepo.findByObj({ phoneNumber: body.phoneNumber });
+  const userCheck = await UserRepo.findByObj({
+    $or: [{ email: body.email }, { phoneNumber: body.phoneNumber }],
+  });
   if (userCheck?.verified) {
-    throw new BadRequestError('User with that phone number aleardy exists');
+    throw new BadRequestError('user with that phone number aleardy exists');
   } else if (userCheck && !userCheck?.verified) {
     throw new BadRequestError(
       'unverified User with that phone number aleardy exists'

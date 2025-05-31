@@ -1,11 +1,11 @@
 import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
 import { Schema, model, Document, AggregatePaginateModel } from 'mongoose';
-import IPermission from './Permission';
+import IPermission, { PERMISSION_DOCUMENT_NAME } from './Permission';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
 
-export const DOCUMENT_NAME = 'Role';
-export const COLLECTION_NAME = 'roles';
+export const ROLE_DOCUMENT_NAME = 'Role';
+const ROLE_COLLECTION_NAME = 'Roles';
 
 export default interface IRole extends Document {
   name: string;
@@ -22,7 +22,7 @@ const schema = new Schema<IRole>(
     permissions: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Permission',
+        ref: () => PERMISSION_DOCUMENT_NAME,
       },
     ],
     deletedAt: {
@@ -44,4 +44,4 @@ schema.plugin(mongooseAggregatePaginate);
 export const RoleModel = model<
   IRole,
   Pagination<IRole> & AggregatePaginateModel<IRole>
->(DOCUMENT_NAME, schema, COLLECTION_NAME);
+>(ROLE_DOCUMENT_NAME, schema, ROLE_COLLECTION_NAME);

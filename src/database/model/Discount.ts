@@ -1,9 +1,11 @@
 import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
+import { CATEGORY_DOCUMENT_NAME } from './Category';
+import { PRODUCT_DOCUMENT_NAME } from './Product';
 
-export const DOCUMENT_NAME = 'Discount';
-export const COLLECTION_NAME = 'discounts';
+export const DISCOUNT_DOCUMENT_NAME = 'Discount';
+const DISCOUNT_COLLECTION_NAME = 'Discounts';
 
 export enum DiscountType {
   AMOUNT = 'AMOUNT',
@@ -30,21 +32,13 @@ export default interface IDiscount extends Document {
 const schema = new Schema<IDiscount>(
   {
     target: {
-      menuId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Menu',
-      },
       categoryId: {
         type: Schema.Types.ObjectId,
-        ref: 'Category',
-      },
-      subCategoryId: {
-        type: Schema.Types.ObjectId,
-        ref: 'SubCategory',
+        ref: () => CATEGORY_DOCUMENT_NAME,
       },
       productId: {
         type: Schema.Types.ObjectId,
-        ref: 'Product',
+        ref: () => PRODUCT_DOCUMENT_NAME,
       },
     },
     startDate: {
@@ -79,7 +73,7 @@ preFindHook(schema);
 schema.plugin(mongoosePagination);
 
 export const DiscountModel = model<IDiscount, Pagination<IDiscount>>(
-  DOCUMENT_NAME,
+  DISCOUNT_DOCUMENT_NAME,
   schema,
-  COLLECTION_NAME
+  DISCOUNT_COLLECTION_NAME
 );

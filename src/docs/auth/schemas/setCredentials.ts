@@ -6,7 +6,9 @@
  *       type: object
  *       required:
  *         - phoneNumber
- *         - userName
+ *         - firstName
+ *         - lastName
+ *         - email
  *         - password
  *         - confirmPassword
  *       properties:
@@ -14,7 +16,11 @@
  *           type: string
  *         registerConfirmationCode:
  *           type: number
- *         userName:
+ *         firstName:
+ *           type: string
+ *         lastName:
+ *           type: string
+ *         email:
  *           type: string
  *         password:
  *           type: string

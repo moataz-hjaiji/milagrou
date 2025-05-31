@@ -2,9 +2,10 @@ import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
 import { DiscountType } from './Discount';
+import { USER_DOCUMENT_NAME } from './User';
 
-export const DOCUMENT_NAME = 'PromoCode';
-export const COLLECTION_NAME = 'promoCodes';
+export const PROMO_CODE_DOCUMENT_NAME = 'PromoCode';
+const PROMO_CODE_COLLECTION_NAME = 'PromoCodes';
 
 export default interface IPromoCode extends Document {
   code: string;
@@ -49,7 +50,7 @@ const schema = new Schema<IPromoCode>(
     users: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'User',
+        ref: () => USER_DOCUMENT_NAME,
       },
     ],
     maxUsage: {
@@ -75,7 +76,7 @@ preFindHook(schema);
 schema.plugin(mongoosePagination);
 
 export const PromoCodeModel = model<IPromoCode, Pagination<IPromoCode>>(
-  DOCUMENT_NAME,
+  PROMO_CODE_DOCUMENT_NAME,
   schema,
-  COLLECTION_NAME
+  PROMO_CODE_COLLECTION_NAME
 );

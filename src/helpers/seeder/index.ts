@@ -3,7 +3,6 @@ import { adminSeeder, userSeeder, environment } from '../../configVars';
 import { seedDelete } from './drop';
 import '../../database';
 import { seedUser } from './seed.user';
-import { seedDeliveryPrice } from './seed.deliveryPrice';
 import { seedPermissions } from './seed.permission';
 
 export let seed = async (args = { clearDatabase: false }) => {
@@ -14,18 +13,18 @@ export let seed = async (args = { clearDatabase: false }) => {
   await seedAdmin(
     adminSeeder.adminEmail,
     adminSeeder.adminPass,
-    adminSeeder.adminName,
+    adminSeeder.adminFirstName,
+    adminSeeder.adminLastName,
     adminSeeder.adminPhone
   );
 
   await seedUser(
     userSeeder.userEmail,
     userSeeder.userPass,
-    userSeeder.userName,
+    userSeeder.userFirstName,
+    userSeeder.userLastName,
     userSeeder.userPhone
   );
-
-  await seedDeliveryPrice();
 
   environment !== 'test' && process.exit(1);
 };

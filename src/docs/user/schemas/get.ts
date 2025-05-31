@@ -5,7 +5,9 @@
  *     GetUser:
  *       type: object
  *       properties:
- *         userName:
+ *         firstName:
+ *           type: string
+ *         lastName:
  *           type: string
  *         email:
  *           type: string
@@ -16,8 +18,6 @@
  *         role:
  *           type: string
  *           format: objectId
- *         deliveryGuyOnlineStatus:
- *           type: boolean
  *         createdAt:
  *            type: string
  *            format: date-time

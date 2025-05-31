@@ -5,7 +5,9 @@
  *     UpdateUser:
  *       type: object
  *       properties:
- *         userName:
+ *         firstName:
+ *           type: string
+ *         lastName:
  *           type: string
  *         email:
  *           type: string

@@ -1,8 +1,8 @@
 import { Schema, model, Document } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 
-export const DOCUMENT_NAME = 'Permission';
-export const COLLECTION_NAME = 'permissions';
+export const PERMISSION_DOCUMENT_NAME = 'Permission';
+const PERMISSION_COLLECTION_NAME = 'Permissions';
 
 export default interface IPermission extends Document {
   entity: string;
@@ -29,7 +29,7 @@ const schema = new Schema<IPermission>(
 schema.plugin(mongoosePagination);
 
 export const PermissionModel = model<IPermission, Pagination<IPermission>>(
-  DOCUMENT_NAME,
+  PERMISSION_DOCUMENT_NAME,
   schema,
-  COLLECTION_NAME
+  PERMISSION_COLLECTION_NAME
 );

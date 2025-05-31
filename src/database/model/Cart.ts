@@ -1,31 +1,21 @@
 import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
-import IUser from './User';
-import IProduct from './Product';
-import ISupplementCategory from './SupplementCategory';
-import ISupplement from './Supplement';
+import IUser, { USER_DOCUMENT_NAME } from './User';
+import IProduct, { PRODUCT_DOCUMENT_NAME } from './Product';
 
-export const DOCUMENT_NAME = 'Cart';
-export const COLLECTION_NAME = 'carts';
+export const CART_DOCUMENT_NAME = 'Cart';
+const CART_COLLECTION_NAME = 'Carts';
 
 export enum CartAction {
   PLUS = 'PLUS',
   MINUS = 'MINUS',
 }
 
-export interface ISelectedSupplements {
-  supplementCategory: ObjectId | ISupplementCategory;
-  supplements: {
-    supplement: ObjectId | ISupplement;
-  }[];
-}
-
 export interface ICartItem {
   _id: ObjectId;
   product: ObjectId | IProduct;
   quantity: number;
-  selectedSupplements?: ISelectedSupplements[];
   notes?: string;
 }
 
@@ -39,33 +29,17 @@ const schema = new Schema<ICart>(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: () => USER_DOCUMENT_NAME,
     },
     items: [
       {
         product: {
           type: Schema.Types.ObjectId,
-          ref: 'Product',
+          ref: () => PRODUCT_DOCUMENT_NAME,
         },
         quantity: {
           type: Number,
         },
-        selectedSupplements: [
-          {
-            supplementCategory: {
-              type: Schema.Types.ObjectId,
-              ref: 'SupplementCategory',
-            },
-            supplements: [
-              {
-                supplement: {
-                  type: Schema.Types.ObjectId,
-                  ref: 'Supplement',
-                },
-              },
-            ],
-          },
-        ],
         notes: {
           type: Schema.Types.String,
         },
@@ -87,7 +61,7 @@ preFindHook(schema);
 schema.plugin(mongoosePagination);
 
 export const CartModel = model<ICart, Pagination<ICart>>(
-  DOCUMENT_NAME,
+  CART_DOCUMENT_NAME,
   schema,
-  COLLECTION_NAME
+  CART_COLLECTION_NAME
 );

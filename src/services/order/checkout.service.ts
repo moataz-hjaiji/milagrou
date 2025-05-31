@@ -8,7 +8,6 @@ import UserRepo from '../../database/repository/UserRepo';
 import { sendNotifUser } from '../../helpers/notif';
 import { calculateOrderPrices } from './calculateOrderPrices';
 import { DeliveryType, OrderStatus } from '../../database/model/Order';
-import DeliveryPriceRepo from '../../database/repository/DeliveryPriceRepo';
 import PromoCodeRepo from '../../database/repository/PromoCodeRepo';
 import { DiscountType } from '../../database/model/Discount';
 
@@ -128,17 +127,6 @@ export const checkout = async ({
   }
 
   let orderPrice = orderPriceWithoutDeliveryPrice;
-
-  if (deliveryType === DeliveryType.DELIVERY) {
-    const deliveryPrice = await DeliveryPriceRepo.findByObj({ isActive: true });
-    if (!deliveryPrice) throw new NotFoundError('deliveryPrice not found');
-    if (
-      deliveryPrice.freeDeliveryOption === false ||
-      (deliveryPrice.freeDeliveryOption === true &&
-        deliveryPrice.freeAfter! <= orderPrice)
-    )
-      orderPrice += deliveryPrice.price;
-  }
 
   const orderNewIdCheck = await OrderRepo.getLastNewId();
 

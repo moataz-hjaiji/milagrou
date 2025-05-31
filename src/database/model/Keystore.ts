@@ -1,9 +1,9 @@
 /* eslint-disable prettier/prettier */
 import { Schema, model, Document } from 'mongoose';
-import User from './User';
+import User, { USER_DOCUMENT_NAME } from './User';
 
-export const DOCUMENT_NAME = 'Keystore';
-export const COLLECTION_NAME = 'keystores';
+export const KEYSTORE_DOCUMENT_NAME = 'Keystore';
+const KEYSTORE_COLLECTION_NAME = 'Keystores';
 
 export default interface IKeystore extends Document {
   client: User;
@@ -16,7 +16,7 @@ const schema = new Schema<IKeystore>(
     client: {
       type: Schema.Types.ObjectId,
       required: true,
-      ref: 'User',
+      ref: () => USER_DOCUMENT_NAME,
     },
     primaryKey: {
       type: Schema.Types.String,
@@ -37,7 +37,7 @@ schema.index({ client: 1, primaryKey: 1 });
 schema.index({ client: 1, primaryKey: 1, secondaryKey: 1 });
 
 export const KeystoreModel = model<IKeystore>(
-  DOCUMENT_NAME,
+  KEYSTORE_DOCUMENT_NAME,
   schema,
-  COLLECTION_NAME
+  KEYSTORE_COLLECTION_NAME
 );

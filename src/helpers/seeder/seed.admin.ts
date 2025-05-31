@@ -4,7 +4,8 @@ import { UserModel } from '../../database/model/User';
 export const seedAdmin = async (
   email: string,
   password: string,
-  userName: string,
+  userFirstName: string,
+  userLastName: string,
   phoneNumber: string
 ) => {
   const roleAdmin = await RoleModel.findOne({ name: 'admin' });
@@ -15,11 +16,11 @@ export const seedAdmin = async (
     try {
       await UserModel.create({
         roles: [roleAdmin.id],
-        userName,
+        userFirstName,
+        userLastName,
         phoneNumber,
         email,
         password,
-        verified: true,
       });
       console.log('Admin seeded');
     } catch (error) {

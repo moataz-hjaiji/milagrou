@@ -1,10 +1,9 @@
 import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
-import IMenu from './Menu';
 
-export const DOCUMENT_NAME = 'Category';
-export const COLLECTION_NAME = 'categorys';
+export const CATEGORY_DOCUMENT_NAME = 'Category';
+const CATEGORY_COLLECTION_NAME = 'Categories';
 
 export enum IconsTypes {
   IcSausage = 'ic-sausage',
@@ -50,8 +49,6 @@ export default interface ICategory extends Document {
   descriptionAr: string;
   picture: string;
   icon: IconsTypes;
-  menu: IMenu | ObjectId;
-  hasNoSubCategory: boolean;
   deletedAt?: Date;
 }
 
@@ -81,14 +78,6 @@ const schema = new Schema<ICategory>(
       type: Schema.Types.String,
       trim: true,
     },
-    menu: {
-      type: Schema.Types.ObjectId,
-      ref: 'Menu',
-    },
-    hasNoSubCategory: {
-      type: Schema.Types.Boolean,
-      default: false,
-    },
     deletedAt: {
       type: Date,
       default: null,
@@ -105,7 +94,7 @@ preFindHook(schema);
 schema.plugin(mongoosePagination);
 
 export const CategoryModel = model<ICategory, Pagination<ICategory>>(
-  DOCUMENT_NAME,
+  CATEGORY_DOCUMENT_NAME,
   schema,
-  COLLECTION_NAME
+  CATEGORY_COLLECTION_NAME
 );

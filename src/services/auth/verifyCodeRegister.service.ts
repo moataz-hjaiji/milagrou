@@ -12,7 +12,7 @@ export const verifyCodeRegister = async ({
   registerConfirmationCode,
 }: verifyCodeParams) => {
   const roleUser = await RoleRepo.findByCode('user');
-  if (!roleUser) throw new NotFoundError('admin role not found');
+  if (!roleUser) throw new NotFoundError('user role not found');
 
   const userCheck = await UserRepo.findByObj({
     phoneNumber,

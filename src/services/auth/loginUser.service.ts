@@ -12,16 +12,21 @@ import { omit } from 'lodash';
 import RoleRepo from '../../database/repository/RoleRepo';
 
 interface LoginParams {
-  phoneNumber: string;
+  emailOrPhone: string;
   password: string;
 }
 
-export const loginUser = async ({ phoneNumber, password }: LoginParams) => {
+export const loginUser = async ({ emailOrPhone, password }: LoginParams) => {
   const roleUser = await RoleRepo.findByCode('user');
   if (!roleUser) throw new NotFoundError('user role not found');
 
+  const emailOrPhoneToLowerCase = emailOrPhone.toLocaleLowerCase();
+
   const user = await UserRepo.findByObjFull({
-    phoneNumber,
+    $or: [
+      { email: emailOrPhoneToLowerCase },
+      { phoneNumber: emailOrPhoneToLowerCase },
+    ],
     roles: roleUser.id,
   });
 
@@ -39,6 +44,9 @@ export const loginUser = async ({ phoneNumber, password }: LoginParams) => {
   ]);
 
   const filteredUser = omit(user.toObject(), ['password']);
+
+  user.lastLogin = new Date();
+  await user.save();
 
   return {
     tokens: tokens,

@@ -1,13 +1,15 @@
 import UserRepo from '../../database/repository/UserRepo';
 import { BadRequestError, NotFoundError } from '../../core/ApiError';
 import RoleRepo from '../../database/repository/RoleRepo';
-
 import crypto from 'crypto';
-import { sendPhoneMessage } from '../../helpers/utils/smsSender';
+import {
+  MessageSettings,
+  sendTwilioMessage,
+} from '../../helpers/utils/smsSender';
 
 export const resendRegisterPhone = async (phoneNumber: string) => {
   const roleUser = await RoleRepo.findByCode('user');
-  if (!roleUser) throw new NotFoundError('admin role not found');
+  if (!roleUser) throw new NotFoundError('user role not found');
 
   const userCheck = await UserRepo.findByObj({
     phoneNumber,
@@ -16,7 +18,7 @@ export const resendRegisterPhone = async (phoneNumber: string) => {
   });
   if (!userCheck) throw new BadRequestError('invalid phone number');
 
-  const randomCode = crypto.randomInt(1001, 9999);
+  const randomCode = crypto.randomInt(100001, 999999);
 
   const user = await UserRepo.update(userCheck.id, {
     registerConfirmationCode: randomCode,
@@ -25,5 +27,9 @@ export const resendRegisterPhone = async (phoneNumber: string) => {
 
   const message = `Your verification code is:${randomCode}`;
 
-  await sendPhoneMessage(message, phoneNumber);
+  const messageSettings: MessageSettings = {
+    body: message,
+    to: phoneNumber,
+  };
+  sendTwilioMessage(messageSettings);
 };

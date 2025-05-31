@@ -1,26 +1,11 @@
 import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
-import IProductPrice from './ProductPrice';
-import ISubCategory from './SubCategory';
-import ICategory from './Category';
+import IProductPrice, { PRODUCT_PRICE_DOCUMENT_NAME } from './ProductPrice';
+import ICategory, { CATEGORY_DOCUMENT_NAME } from './Category';
 
-export const DOCUMENT_NAME = 'Product';
-export const COLLECTION_NAME = 'products';
-
-interface ISupplement {
-  supplement: ObjectId;
-  price: number;
-}
-
-interface ISupplementArrayItem {
-  supplementCategory: ObjectId;
-  min: number;
-  max: number;
-  supplements: ISupplement[];
-}
-
-interface ISupplementArray extends Array<ISupplementArrayItem> {}
+export const PRODUCT_DOCUMENT_NAME = 'Product';
+const PRODUCT_COLLECTION_NAME = 'Products';
 
 export default interface IProduct extends Document {
   nameFr: string;
@@ -31,9 +16,7 @@ export default interface IProduct extends Document {
   isAvailable: boolean;
   isRecommended: boolean;
   productPrice?: IProductPrice | ObjectId;
-  subCategory?: ISubCategory | ObjectId;
   category?: ICategory | ObjectId;
-  supplementArray?: ISupplementArray;
   position?: number;
   deletedAt?: Date;
 }
@@ -70,46 +53,15 @@ const schema = new Schema<IProduct>(
         trim: true,
       },
     ],
-    subCategory: {
-      type: Schema.Types.ObjectId,
-      ref: 'SubCategory',
-    },
     category: {
       type: Schema.Types.ObjectId,
-      ref: 'Category',
+      ref: () => CATEGORY_DOCUMENT_NAME,
     },
     productPrice: {
       type: Schema.Types.ObjectId,
-      ref: 'ProductPrice',
+      ref: () => PRODUCT_PRICE_DOCUMENT_NAME,
     },
 
-    supplementArray: [
-      {
-        _id: false,
-        supplementCategory: {
-          type: Schema.Types.ObjectId,
-          ref: 'SupplementCategory',
-        },
-        min: {
-          type: Schema.Types.Number,
-        },
-        max: {
-          type: Schema.Types.Number,
-        },
-        supplements: [
-          {
-            _id: false,
-            supplement: {
-              type: Schema.Types.ObjectId,
-              ref: 'Supplement',
-            },
-            price: {
-              type: Schema.Types.Number,
-            },
-          },
-        ],
-      },
-    ],
     position: {
       type: Schema.Types.Number,
     },
@@ -129,7 +81,7 @@ preFindHook(schema);
 schema.plugin(mongoosePagination);
 
 export const ProductModel = model<IProduct, Pagination<IProduct>>(
-  DOCUMENT_NAME,
+  PRODUCT_DOCUMENT_NAME,
   schema,
-  COLLECTION_NAME
+  PRODUCT_COLLECTION_NAME
 );

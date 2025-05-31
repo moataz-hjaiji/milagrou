@@ -2,28 +2,34 @@ import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import bcrypt from 'bcryptjs';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
-import IRole from './Role';
+import IRole, { ROLE_DOCUMENT_NAME } from './Role';
 
-export const DOCUMENT_NAME = 'User';
-export const COLLECTION_NAME = 'users';
+export const USER_DOCUMENT_NAME = 'User';
+const USER_COLLECTION_NAME = 'Users';
 
 export default interface IUser extends Document {
-  userName: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  password: string;
   phoneNumber: string;
   avatar: string;
+  password: string;
   verified: boolean;
+  emailIsVerified: boolean;
   registerConfirmationCode: number | null;
   forgetConfirmationCode: number | null;
   roles: IRole[];
-  deliveryGuyOnlineStatus: boolean;
+  lastLogin?: Date;
   deletedAt?: Date;
 }
 
 const schema = new Schema<IUser>(
   {
-    userName: {
+    firstName: {
+      type: Schema.Types.String,
+      trim: true,
+    },
+    lastName: {
       type: Schema.Types.String,
       trim: true,
     },
@@ -48,7 +54,7 @@ const schema = new Schema<IUser>(
       type: Schema.Types.Boolean,
       default: false,
     },
-    deliveryGuyOnlineStatus: {
+    emailIsVerified: {
       type: Schema.Types.Boolean,
       default: false,
     },
@@ -63,10 +69,13 @@ const schema = new Schema<IUser>(
     roles: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Role',
+        ref: () => ROLE_DOCUMENT_NAME,
         select: false,
       },
     ],
+    lastLogin: {
+      type: Date,
+    },
     deletedAt: {
       type: Date,
       default: null,
@@ -97,7 +106,7 @@ schema.methods.comparePassword = async function (
 };
 
 export const UserModel = model<IUser, Pagination<IUser>>(
-  DOCUMENT_NAME,
+  USER_DOCUMENT_NAME,
   schema,
-  COLLECTION_NAME
+  USER_COLLECTION_NAME
 );

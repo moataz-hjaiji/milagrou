@@ -1,8 +1,6 @@
 import { ProtectedRequest } from 'app-request';
 import { AuthFailureError } from '../core/ApiError';
 import asyncHandler from '../helpers/utils/asyncHandler';
-import IRole from '../database/model/Role';
-
 import { IAction, IEntity, actions } from '../helpers/seeder/seed.permission';
 
 export default asyncHandler(async (req: ProtectedRequest, res, next) => {

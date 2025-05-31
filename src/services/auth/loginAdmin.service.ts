@@ -22,16 +22,12 @@ export const loginAdmin = async ({ email, password }: LoginParams) => {
   const roleUser = await RoleRepo.findByCode('user');
   if (!roleUser) throw new NotFoundError('user role not found');
 
-  const roleDelivery = await RoleRepo.findByCode('delivery');
-  if (!roleDelivery) throw new NotFoundError('delivery role not found');
-
   const admin = await UserRepo.findByObjFull({
     email: emailToLowerCase,
-    roles: { $nin: [roleUser.id, roleDelivery.id] },
+    roles: { $nin: [roleUser.id] },
   });
 
   if (!admin) throw new BadRequestError('Admin not registered');
-  if (admin.verified === false) throw new BadRequestError('Admin not verified');
 
   const match = await bcryptjs.compare(password, admin.password);
   if (!match) throw new AuthFailureError('Invalid credentials');
@@ -44,6 +40,9 @@ export const loginAdmin = async ({ email, password }: LoginParams) => {
   ]);
 
   const filteredUser = omit(admin.toObject(), ['password']);
+
+  admin.lastLogin = new Date();
+  await admin.save();
 
   return {
     tokens: tokens,

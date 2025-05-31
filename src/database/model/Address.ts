@@ -1,10 +1,10 @@
 import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
-import IUser from './User';
+import IUser, { USER_DOCUMENT_NAME } from './User';
 
-export const DOCUMENT_NAME = 'Address';
-export const COLLECTION_NAME = 'addresss';
+export const ADDRESS_DOCUMENT_NAME = 'Address';
+const ADDRESS_COLLECTION_NAME = 'Addresses';
 
 interface Location {
   type: string;
@@ -25,7 +25,7 @@ const schema = new Schema<IAddress>(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: () => USER_DOCUMENT_NAME,
     },
     street: {
       type: Schema.Types.String,
@@ -69,7 +69,7 @@ preFindHook(schema);
 schema.plugin(mongoosePagination);
 
 export const AddressModel = model<IAddress, Pagination<IAddress>>(
-  DOCUMENT_NAME,
+  ADDRESS_DOCUMENT_NAME,
   schema,
-  COLLECTION_NAME
+  ADDRESS_COLLECTION_NAME
 );

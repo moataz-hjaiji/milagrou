@@ -2,8 +2,8 @@ import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
 
-export const DOCUMENT_NAME = 'PaymentMethod';
-export const COLLECTION_NAME = 'paymentMethods';
+export const PAYMENT_METHOD_DOCUMENT_NAME = 'PaymentMethod';
+const PAYMENT_METHOD_COLLECTION_NAME = 'PaymentMethods';
 
 export default interface IPaymentMethod extends Document {
   name: string;
@@ -39,4 +39,4 @@ schema.plugin(mongoosePagination);
 export const PaymentMethodModel = model<
   IPaymentMethod,
   Pagination<IPaymentMethod>
->(DOCUMENT_NAME, schema, COLLECTION_NAME);
+>(PAYMENT_METHOD_DOCUMENT_NAME, schema, PAYMENT_METHOD_COLLECTION_NAME);

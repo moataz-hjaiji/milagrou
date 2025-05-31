@@ -4,7 +4,8 @@ import { UserModel } from '../../database/model/User';
 export const seedUser = async (
   email: string,
   password: string,
-  userName: string,
+  userFirstName: string,
+  userLastName: string,
   phoneNumber: string
 ) => {
   const roleUser = await RoleModel.findOne({ name: 'user' });
@@ -15,7 +16,8 @@ export const seedUser = async (
     try {
       await UserModel.create({
         roles: [roleUser.id],
-        userName,
+        userFirstName,
+        userLastName,
         email,
         password,
         phoneNumber,

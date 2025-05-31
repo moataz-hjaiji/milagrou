@@ -1,11 +1,11 @@
 import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
-import IProduct from './Product';
-import IUser from './User';
+import IProduct, { PRODUCT_DOCUMENT_NAME } from './Product';
+import IUser, { USER_DOCUMENT_NAME } from './User';
 
-export const DOCUMENT_NAME = 'Favourite';
-export const COLLECTION_NAME = 'favourites';
+export const FAVOURITE_DOCUMENT_NAME = 'Favourite';
+const FAVOURITE_COLLECTION_NAME = 'Favourites';
 
 export default interface IFavourite extends Document {
   userId: IUser | ObjectId | string;
@@ -17,11 +17,11 @@ const schema = new Schema<IFavourite>(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: () => USER_DOCUMENT_NAME,
     },
     product: {
       type: Schema.Types.ObjectId,
-      ref: 'Product',
+      ref: () => PRODUCT_DOCUMENT_NAME,
     },
     deletedAt: {
       type: Date,
@@ -39,7 +39,7 @@ preFindHook(schema);
 schema.plugin(mongoosePagination);
 
 export const FavouriteModel = model<IFavourite, Pagination<IFavourite>>(
-  DOCUMENT_NAME,
+  FAVOURITE_DOCUMENT_NAME,
   schema,
-  COLLECTION_NAME
+  FAVOURITE_COLLECTION_NAME
 );

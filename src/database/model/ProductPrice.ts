@@ -1,10 +1,10 @@
 import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
-import IProduct from './Product';
+import IProduct, { PRODUCT_DOCUMENT_NAME } from './Product';
 
-export const DOCUMENT_NAME = 'ProductPrice';
-export const COLLECTION_NAME = 'productPrices';
+export const PRODUCT_PRICE_DOCUMENT_NAME = 'ProductPrice';
+const PRODUCT_PRICE_COLLECTION_NAME = 'ProductPrices';
 
 export default interface IProductPrice extends Document {
   product: IProduct | ObjectId;
@@ -17,7 +17,7 @@ const schema = new Schema<IProductPrice>(
   {
     product: {
       type: Schema.Types.ObjectId,
-      ref: 'Product',
+      ref: () => PRODUCT_DOCUMENT_NAME,
     },
     price: {
       type: Schema.Types.Number,
@@ -44,4 +44,4 @@ schema.plugin(mongoosePagination);
 export const ProductPriceModel = model<
   IProductPrice,
   Pagination<IProductPrice>
->(DOCUMENT_NAME, schema, COLLECTION_NAME);
+>(PRODUCT_PRICE_DOCUMENT_NAME, schema, PRODUCT_PRICE_COLLECTION_NAME);

@@ -9,8 +9,8 @@ import {
 } from '../core/ApiResponse';
 
 export const loginUser = asyncHandler(async (req: Request, res: Response) => {
-  const { phoneNumber, password } = req.body;
-  const result = await authService.loginUser({ phoneNumber, password });
+  const { emailOrPhone, password } = req.body;
+  const result = await authService.loginUser({ emailOrPhone, password });
   new SuccessResponse('Login Success', result).send(res);
 });
 
@@ -19,17 +19,6 @@ export const loginAdmin = asyncHandler(async (req: Request, res: Response) => {
   const result = await authService.loginAdmin({ email, password });
   new SuccessResponse('Login Success', result).send(res);
 });
-
-export const loginDelivery = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { emailOrUserName, password } = req.body;
-    const result = await authService.loginDelivery({
-      emailOrUserName,
-      password,
-    });
-    new SuccessResponse('Login Success', result).send(res);
-  }
-);
 
 export const logout = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
@@ -84,11 +73,15 @@ export const setCredentials = asyncHandler(
       registerConfirmationCode,
       password,
       confirmPassword,
-      userName,
+      firstName,
+      lastName,
+      email,
     } = req.body;
     const result = await authService.setCredentials({
       phoneNumber,
-      userName,
+      firstName,
+      lastName,
+      email,
       registerConfirmationCode,
       password,
       confirmPassword,

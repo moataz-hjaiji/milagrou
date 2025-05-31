@@ -5,10 +5,10 @@
  *     LoginUser:
  *       type: object
  *       required:
- *         - phoneNumber
+ *         - emailOrPhone
  *         - password
  *       properties:
- *         phoneNumber:
+ *         emailOrPhone:
  *           type: string
  *         password:
  *           type: string

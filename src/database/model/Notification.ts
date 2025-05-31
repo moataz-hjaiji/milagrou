@@ -1,10 +1,13 @@
 import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
-import IUser from './User';
+import { CATEGORY_DOCUMENT_NAME } from './Category';
+import { ORDER_DOCUMENT_NAME } from './Order';
+import { PRODUCT_DOCUMENT_NAME } from './Product';
+import IUser, { USER_DOCUMENT_NAME } from './User';
 
-export const DOCUMENT_NAME = 'Notification';
-export const COLLECTION_NAME = 'notifications';
+export const NOTIFICATION_DOCUMENT_NAME = 'Notification';
+const NOTIFICATION_COLLECTION_NAME = 'Notifications';
 
 export default interface INotification extends Document {
   userId: IUser | ObjectId | string;
@@ -20,7 +23,7 @@ const schema = new Schema<INotification>(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: () => USER_DOCUMENT_NAME,
     },
     title: {
       type: Schema.Types.String,
@@ -33,23 +36,15 @@ const schema = new Schema<INotification>(
     data: {
       orderId: {
         type: Schema.Types.ObjectId,
-        ref: 'Order',
-      },
-      menuId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Menu',
+        ref: () => ORDER_DOCUMENT_NAME,
       },
       categoryId: {
         type: Schema.Types.ObjectId,
-        ref: 'Category',
-      },
-      subCategoryId: {
-        type: Schema.Types.ObjectId,
-        ref: 'SubCategory',
+        ref: () => CATEGORY_DOCUMENT_NAME,
       },
       ProductId: {
         type: Schema.Types.ObjectId,
-        ref: 'Product',
+        ref: () => PRODUCT_DOCUMENT_NAME,
       },
     },
     isRead: {
@@ -78,4 +73,4 @@ schema.plugin(mongoosePagination);
 export const NotificationModel = model<
   INotification,
   Pagination<INotification>
->(DOCUMENT_NAME, schema, COLLECTION_NAME);
+>(NOTIFICATION_DOCUMENT_NAME, schema, NOTIFICATION_COLLECTION_NAME);

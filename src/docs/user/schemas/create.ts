@@ -5,7 +5,9 @@
  *     CreateUser:
  *       type: object
  *       properties:
- *         userName:
+ *         firstName:
+ *           type: string
+ *         lastName:
  *           type: string
  *         email:
  *           type: string
@@ -16,6 +18,4 @@
  *         avatar:
  *           type: string
  *           format: binary
- *         deliveryGuyOnlineStatus:
- *           type: boolean
  */

@@ -19,21 +19,9 @@ router.post(
 );
 
 router.post(
-  '/login/delivery',
-  validator(schema.loginDelivery),
-  authController.loginDelivery
-);
-
-router.post(
   '/register',
   validator(schema.registerPhone),
   authController.registerPhone
-);
-
-router.post(
-  '/register/resend',
-  validator(schema.registerPhone),
-  authController.resendRegisterPhone
 );
 
 router.post(
@@ -49,15 +37,15 @@ router.post(
 );
 
 router.post(
-  '/password/forget',
-  validator(schema.forgetPhone),
-  authController.forgetPassword
+  '/register/resend',
+  validator(schema.registerPhone),
+  authController.resendRegisterPhone
 );
 
 router.post(
-  '/password/resend',
+  '/password/forget',
   validator(schema.forgetPhone),
-  authController.resendForgetPassword
+  authController.forgetPassword
 );
 
 router.post(
@@ -68,8 +56,14 @@ router.post(
 
 router.post(
   '/password/reset',
-  validator(schema.setPAssword),
+  validator(schema.setPassword),
   authController.resetPassword
+);
+
+router.post(
+  '/password/resend',
+  validator(schema.forgetPhone),
+  authController.resendForgetPassword
 );
 
 router.use('/', authentication);
