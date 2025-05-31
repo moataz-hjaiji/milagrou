@@ -1,0 +1,47 @@
+import Joi from '@hapi/joi';
+import { IconsTypes } from '../../database/model/Category';
+import { JoiObjectId } from '../../helpers/utils/validator';
+
+export default {
+  param: Joi.object().keys({
+    id: JoiObjectId().required(),
+  }),
+
+  create: Joi.object().keys({
+    nameFr: Joi.string()
+      .min(3)
+      .required()
+      .pattern(/^[a-zA-ZÀ-ÿ\s'-]+$/),
+    nameAr: Joi.string()
+      .min(3)
+      .required()
+      .pattern(/^[\u0600-\u06FF\s]+$/),
+    descriptionFr: Joi.string()
+      .min(3)
+      .pattern(/^[a-zA-ZÀ-ÿ0-9\s'".,;:!?@#$%^&*()_+=\[\]{}|\\<>\/\n-]+$/),
+    descriptionAr: Joi.string()
+      .min(3)
+      .pattern(/^[\u0600-\u06FF0-9\s'".,;:!؟@#$%^&*()_+=\[\]{}|\\<>\/\n-]+$/),
+    category: JoiObjectId().required(),
+    icon: Joi.string()
+      .valid(...Object.values(IconsTypes))
+      .required(),
+  }),
+
+  update: Joi.object().keys({
+    nameFr: Joi.string()
+      .min(3)
+      .pattern(/^[a-zA-ZÀ-ÿ\s'-]+$/),
+    nameAr: Joi.string()
+      .min(3)
+      .pattern(/^[\u0600-\u06FF\s]+$/),
+    descriptionFr: Joi.string()
+      .min(3)
+      .pattern(/^[a-zA-ZÀ-ÿ0-9\s'".,;:!?@#$%^&*()_+=\[\]{}|\\<>\/\n-]+$/),
+    descriptionAr: Joi.string()
+      .min(3)
+      .pattern(/^[\u0600-\u06FF0-9\s'".,;:!؟@#$%^&*()_+=\[\]{}|\\<>\/\n-]+$/),
+    category: JoiObjectId(),
+    icon: Joi.string().valid(...Object.values(IconsTypes)),
+  }),
+};
