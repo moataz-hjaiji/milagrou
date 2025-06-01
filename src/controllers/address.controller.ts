@@ -55,15 +55,3 @@ export const remove = asyncHandler(
     new SuccessMsgResponse('Address Deleted').send(res);
   }
 );
-
-export const findAdressesSortedByLocation = asyncHandler(
-  async (req: ProtectedRequest, res: Response) => {
-    const { longitude, latitude, adressIds } = req.body;
-    const result = await addressService.findAdressesSortedByLocation({
-      longitude,
-      latitude,
-      adressIds,
-    });
-    new SuccessResponse('Success', result).send(res);
-  }
-);

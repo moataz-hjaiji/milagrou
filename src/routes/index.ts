@@ -15,6 +15,8 @@ import favourites from './favourite/router';
 import ratings from './rating/router';
 import roles from './role/router';
 import permissions from './permission/router';
+import governorates from './governorate/router';
+import areas from './area/router';
 
 const router = express.Router();
 
@@ -34,5 +36,7 @@ router.use('/favourites', favourites);
 router.use('/ratings', ratings);
 router.use('/roles', roles);
 router.use('/permissions', permissions);
+router.use('/governorates', governorates);
+router.use('/areas', areas);
 
 export default router;

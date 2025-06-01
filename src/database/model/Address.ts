@@ -1,23 +1,19 @@
 import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
+import IArea, { AREA_DOCUMENT_NAME } from './Area';
 import IUser, { USER_DOCUMENT_NAME } from './User';
 
 export const ADDRESS_DOCUMENT_NAME = 'Address';
 const ADDRESS_COLLECTION_NAME = 'Addresses';
 
-interface Location {
-  type: string;
-  coordinates: [number, number];
-}
-
 export default interface IAddress extends Document {
   userId: IUser | ObjectId;
+  areaId: IArea | ObjectId;
+  block: string;
   street: string;
-  city: string;
-  location: Location;
-  isHome?: boolean;
-  isWork?: boolean;
+  buildingNumber: number;
+  specialDirection: string;
   deletedAt?: Date;
 }
 
@@ -27,29 +23,21 @@ const schema = new Schema<IAddress>(
       type: Schema.Types.ObjectId,
       ref: () => USER_DOCUMENT_NAME,
     },
+    areaId: {
+      type: Schema.Types.ObjectId,
+      ref: () => AREA_DOCUMENT_NAME,
+    },
+    block: {
+      type: Schema.Types.String,
+    },
     street: {
       type: Schema.Types.String,
     },
-    city: {
+    buildingNumber: {
+      type: Schema.Types.Number,
+    },
+    specialDirection: {
       type: Schema.Types.String,
-    },
-    location: {
-      type: {
-        type: Schema.Types.String,
-        enum: ['Point'],
-        default: 'Point',
-      },
-      coordinates: {
-        type: [Schema.Types.Number],
-      },
-    },
-    isHome: {
-      type: Schema.Types.Boolean,
-      default: false,
-    },
-    isWork: {
-      type: Schema.Types.Boolean,
-      default: false,
     },
     deletedAt: {
       type: Date,
@@ -62,8 +50,6 @@ const schema = new Schema<IAddress>(
     versionKey: false,
   }
 );
-
-schema.index({ location: '2dsphere' });
 
 preFindHook(schema);
 schema.plugin(mongoosePagination);

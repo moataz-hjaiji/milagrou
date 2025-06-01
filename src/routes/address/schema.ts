@@ -8,34 +8,19 @@ export default {
 
   create: Joi.object().keys({
     userId: JoiObjectId().required(),
+    areaId: JoiObjectId().required(),
+    block: Joi.string().required(),
     street: Joi.string().required(),
-    city: Joi.string().required(),
-    location: Joi.object({
-      type: Joi.string().valid('Point').required(),
-      coordinates: Joi.array()
-        .items(Joi.number().required())
-        .length(2)
-        .required(),
-    }).required(),
-    isHome: Joi.boolean(),
-    isWork: Joi.boolean(),
+    buildingNumber: Joi.number(),
+    specialDirection: Joi.string(),
   }),
 
   update: Joi.object().keys({
     userId: JoiObjectId(),
+    areaId: JoiObjectId(),
+    block: Joi.string(),
     street: Joi.string(),
-    city: Joi.string(),
-    location: Joi.object({
-      type: Joi.string().valid('Point'),
-      coordinates: Joi.array().items(Joi.number()).length(2),
-    }),
-    isHome: Joi.boolean(),
-    isWork: Joi.boolean(),
-  }),
-
-  lookup: Joi.object().keys({
-    longitude: Joi.number().required(),
-    latitude: Joi.number().required(),
-    adressIds: Joi.array().items(JoiObjectId()).required(),
+    buildingNumber: Joi.number(),
+    specialDirection: Joi.string(),
   }),
 };

@@ -1,9 +1,9 @@
 /**
  * @swagger
- * /addresses/lookup:
+ * /governorates:
  *    post:
- *      tags: [Address]
- *      summary: find closest adresses
+ *      tags: [Governorate]
+ *      summary: Create a new Governorate
  *      security:
  *        - bearerAuth: []
  *      consumes:
@@ -14,13 +14,16 @@
  *        content:
  *          application/json:
  *              schema:
- *                $ref: '#components/schemas/Lookup'
+ *                $ref: '#components/schemas/CreateGovernorate'
  *          multipart/form-data:
  *              schema:
- *                $ref: '#components/schemas/Lookup'
+ *                $ref: '#components/schemas/CreateGovernorate'
  *      responses:
  *        200:
- *          description: 	sucess
+ *          content:
+ *            application/json:
+ *              schema:
+ *                $ref: '#/components/schemas/GetGovernorate'
  *        400:
  *          description: 	Validation Failed
  *        401:

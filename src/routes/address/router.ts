@@ -26,15 +26,6 @@ router
   );
 
 router
-  .route('/lookup')
-  .post(
-    assignAction({ action: ACTIONS.list, entity: 'Address' }),
-    authorization,
-    validator(schema.lookup),
-    addressController.findAdressesSortedByLocation
-  );
-
-router
   .route('/:id')
   .get(
     assignAction({ action: ACTIONS.read, entity: 'Address' }),

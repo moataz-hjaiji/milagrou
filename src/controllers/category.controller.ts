@@ -10,8 +10,8 @@ import {
 
 export const create = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
-    const { body, files } = req;
-    const result = await categoryService.create({ body, files });
+    const { body } = req;
+    const result = await categoryService.create({ body });
     new SuccessResponse('Category created', result).send(res);
   }
 );
@@ -42,7 +42,7 @@ export const update = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
     const { id } = req.params;
     const { body, files } = req;
-    const result = await categoryService.update({ id, body, files });
+    const result = await categoryService.update({ id, body });
     new SuccessResponse('Category updated', result).send(res);
   }
 );

@@ -1,5 +1,4 @@
 import express from 'express';
-import FileUploadHandler from '../../helpers/fileUpload';
 import authentication from '../../authUtils/authentication';
 import * as categoryController from '../../controllers/category.controller';
 import validator, { ValidationSource } from '../../helpers/utils/validator';
@@ -7,8 +6,6 @@ import schema from './schema';
 import authorization from '../../authUtils/authorization';
 import assignAction from '../../authUtils/assignAction';
 import { ACTIONS } from '../../helpers/seeder/seed.permission';
-
-const fileUploadHandler = new FileUploadHandler();
 
 const router = express.Router();
 
@@ -18,10 +15,6 @@ router
     authentication,
     assignAction({ action: ACTIONS.create, entity: 'Category' }),
     authorization,
-    fileUploadHandler.handleCustomFileUpload([
-      { name: 'picture' },
-      { name: 'icon' },
-    ]),
     validator(schema.create),
     categoryController.create
   )
@@ -37,10 +30,6 @@ router
     authentication,
     assignAction({ action: ACTIONS.update, entity: 'Category' }),
     authorization,
-    fileUploadHandler.handleCustomFileUpload([
-      { name: 'picture' },
-      { name: 'icon' },
-    ]),
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     categoryController.update
