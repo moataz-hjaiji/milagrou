@@ -22,7 +22,7 @@ export const getAll = asyncHandler(
     const result = await productService.getAll(query);
 
     new SuccessResponsePaginate(
-      'All products returned successfully gaston',
+      'All products returned successfully',
       result.docs,
       result.meta
     ).send(res);
