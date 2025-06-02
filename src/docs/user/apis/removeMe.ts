@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /users/me:
+ * /users/me:
  *    delete:
  *      summary: Delete me
  *      tags: [User]

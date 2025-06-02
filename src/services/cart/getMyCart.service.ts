@@ -15,54 +15,63 @@ export const getMyCart = async (userId: ObjectId) => {
 
   await cart.populate([
     {
-      path: 'items.product',
-      populate: [
-        { path: 'productPrice', select: ' -createdAt -updatedAt' },
-        {
-          path: 'supplementArray.supplementCategory',
-          select: '-description -createdAt -updatedAt',
-        },
-        {
-          path: 'supplementArray.supplements.supplement',
-          select: '-description -createdAt -updatedAt',
-        },
-        {
-          path: 'subCategory',
-          populate: [
-            {
-              path: 'category',
-              populate: [
-                { path: 'menu', select: '-description -createdAt -updatedAt' },
-              ],
-              select: '-description -createdAt -updatedAt',
-            },
-          ],
-          select: '-description -createdAt -updatedAt',
-        },
-        {
-          path: 'category',
-          populate: [
-            { path: 'menu', select: '-description -createdAt -updatedAt' },
-          ],
-          select: '-description -createdAt -updatedAt',
-        },
-      ],
-      select: '-createdAt -updatedAt',
+      path: 'items.product.category', // Nested population for product->category
     },
     {
-      path: 'items.selectedSupplements',
-      populate: [
-        {
-          path: 'supplementCategory',
-          select: '-description -createdAt -updatedAt',
-        },
-        {
-          path: 'supplements.supplement',
-          select: '-description -createdAt -updatedAt',
-        },
-      ],
+      path: 'items.supplements', // Separate population for supplements
     },
   ]);
+
+  // await cart.populate([
+  //   {
+  //     path: 'items.product',
+  //     populate: [
+  //       { path: 'productPrice', select: ' -createdAt -updatedAt' },
+  //       {
+  //         path: 'supplementArray.supplementCategory',
+  //         select: '-description -createdAt -updatedAt',
+  //       },
+  //       {
+  //         path: 'supplementArray.supplements.supplement',
+  //         select: '-description -createdAt -updatedAt',
+  //       },
+  //       {
+  //         path: 'subCategory',
+  //         populate: [
+  //           {
+  //             path: 'category',
+  //             populate: [
+  //               { path: 'menu', select: '-description -createdAt -updatedAt' },
+  //             ],
+  //             select: '-description -createdAt -updatedAt',
+  //           },
+  //         ],
+  //         select: '-description -createdAt -updatedAt',
+  //       },
+  //       {
+  //         path: 'category',
+  //         populate: [
+  //           { path: 'menu', select: '-description -createdAt -updatedAt' },
+  //         ],
+  //         select: '-description -createdAt -updatedAt',
+  //       },
+  //     ],
+  //     select: '-createdAt -updatedAt',
+  //   },
+  //   {
+  //     path: 'items.selectedSupplements',
+  //     populate: [
+  //       {
+  //         path: 'supplementCategory',
+  //         select: '-description -createdAt -updatedAt',
+  //       },
+  //       {
+  //         path: 'supplements.supplement',
+  //         select: '-description -createdAt -updatedAt',
+  //       },
+  //     ],
+  //   },
+  // ]);
 
   let result = await calculateItemPrices(cart.toObject());
 

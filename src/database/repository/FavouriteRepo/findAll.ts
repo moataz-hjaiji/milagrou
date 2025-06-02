@@ -5,41 +5,14 @@ import APIFeatures from '../../../helpers/utils/apiFeatures';
 type pagingObj = {
   limit: number;
   page: number;
+  populate: string;
 };
 
 const findAll = async (
   paging: pagingObj,
   query: object
 ): Promise<PaginationModel<IFavourite>> => {
-  let findAllQuery = FavouriteModel.find({ deletedAt: null }).populate([
-    {
-      path: 'product',
-      select: ' -createdAt -updatedAt',
-      populate: [
-        { path: 'productPrice', select: ' -createdAt -updatedAt' },
-        {
-          path: 'subCategory',
-          populate: [
-            {
-              path: 'category',
-              populate: [
-                { path: 'menu', select: '-description -createdAt -updatedAt' },
-              ],
-              select: '-description -createdAt -updatedAt',
-            },
-          ],
-          select: '-description -createdAt -updatedAt',
-        },
-        {
-          path: 'category',
-          populate: [
-            { path: 'menu', select: '-description -createdAt -updatedAt' },
-          ],
-          select: '-description -createdAt -updatedAt',
-        },
-      ],
-    },
-  ]);
+  let findAllQuery = FavouriteModel.find({ deletedAt: null });
 
   const features = new APIFeatures(findAllQuery, query)
     .filter()
@@ -52,6 +25,7 @@ const findAll = async (
     query: features.query,
     limit: paging.limit ? paging.limit : null,
     page: paging.page ? paging.page : null,
+    populate: paging.populate ? paging.populate : null,
   };
   return (await FavouriteModel.paginate(
     options

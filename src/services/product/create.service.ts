@@ -7,15 +7,6 @@ interface createParams {
 }
 
 export const create = async ({ body, files }: createParams) => {
-  const checkProduct = await ProductRepo.findByObj({
-    $or: [{ nameAr: body.nameAr }, { nameFr: body.nameFr }],
-  });
-
-  if (checkProduct)
-    throw new BadRequestError(
-      'Product with that name (Arabic or French) already exists'
-    );
-
   if (files) {
     if ('images' in files) {
       const images = (

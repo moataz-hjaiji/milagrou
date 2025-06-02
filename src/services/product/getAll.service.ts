@@ -9,6 +9,7 @@ export const getAll = async (query: any) => {
   const options = {
     page: parseInt(page as string, 10) || 1,
     limit: parseInt(perPage as string, 10) || 10,
+    populate: 'category',
   };
 
   let products = await ProductRepo.findAll(options, query);
@@ -21,10 +22,8 @@ export const getAll = async (query: any) => {
           product._id.toString()
         );
       }
-      if (product.productPrice) {
-        const priceAfterDiscount = await getMaxDiscountedPrice(product);
-        product.productPrice.priceAfterDiscount = priceAfterDiscount;
-      }
+      const priceAfterDiscount = await getMaxDiscountedPrice(product);
+      product.priceAfterDiscount = priceAfterDiscount;
     })
   );
 

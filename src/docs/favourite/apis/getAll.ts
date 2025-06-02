@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /favourites:
+ * /favourites:
  *    get:
  *      summary: Get all the Favourites
  *      tags: [Favourite]

@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /discount:
+ * /discount:
  *    get:
  *      summary: Get all the Discounts
  *      tags: [Discount]

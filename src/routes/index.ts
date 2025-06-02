@@ -3,7 +3,6 @@ import auth from './auth/router';
 import users from './user/router';
 import categories from './category/router';
 import products from './product/router';
-import productPrices from './productPrice/router';
 import paymentMethods from './paymentMethod/router';
 import addresses from './address/router';
 import carts from './cart/router';
@@ -17,6 +16,9 @@ import roles from './role/router';
 import permissions from './permission/router';
 import governorates from './governorate/router';
 import areas from './area/router';
+import stores from './store/router';
+import deliveryPrices from './deliveryPrice/router';
+import supplements from './supplement/router';
 
 const router = express.Router();
 
@@ -24,7 +26,6 @@ router.use('/auth', auth);
 router.use('/users', users);
 router.use('/categories', categories);
 router.use('/products', products);
-router.use('/product-prices', productPrices);
 router.use('/payment-methods', paymentMethods);
 router.use('/addresses', addresses);
 router.use('/carts', carts);
@@ -38,5 +39,8 @@ router.use('/roles', roles);
 router.use('/permissions', permissions);
 router.use('/governorates', governorates);
 router.use('/areas', areas);
+router.use('/stores', stores);
+router.use('/delivery-prices', deliveryPrices);
+router.use('/supplements', supplements);
 
 export default router;

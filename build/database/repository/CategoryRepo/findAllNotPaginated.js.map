@@ -1,0 +1,1 @@
+{"version":3,"file":"findAllNotPaginated.js","sourceRoot":"","sources":["../../../../src/database/repository/CategoryRepo/findAllNotPaginated.ts"],"names":[],"mappings":";;AAAA,mDAAgE;AAEhE,MAAM,OAAO,GAAG,CAAC,GAAW,EAAwB,EAAE;IACpD,OAAO,wBAAa,CAAC,IAAI,CAAC,GAAG,CAAC,CAAC,IAAI,EAAE,CAAC;AACxC,CAAC,CAAC;AAEF,kBAAe,OAAO,CAAC"}

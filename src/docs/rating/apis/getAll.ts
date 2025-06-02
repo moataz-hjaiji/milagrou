@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /ratings:
+ * /ratings:
  *    get:
  *      summary: Get all the Ratings
  *      tags: [Rating]

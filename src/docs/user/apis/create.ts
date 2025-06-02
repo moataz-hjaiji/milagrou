@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /users:
+ * /users:
  *    post:
  *      summary: Create a new user
  *      tags: [User]

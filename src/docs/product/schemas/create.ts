@@ -5,63 +5,40 @@
  *     CreateProduct:
  *       type: object
  *       required:
- *         - nameFr
- *         - nameAr
- *         - images
- *         - isAvailable
- *         - isRecommended
+ *         - name
+ *         - description
+ *         - price
+ *         - category
  *       properties:
- *         nameFr:
+ *         name:
  *           type: string
- *         nameAr:
+ *         description:
  *           type: string
- *         descriptionFr:
- *           type: string
- *         descriptionAr:
- *           type: string
- *         isAvailable:
- *           type: boolean
- *         isRecommended:
- *           type: boolean
- *         images:
- *           type: array
- *           items :
- *             type: string
- *             format: binary
- *         subCategory:
- *           type: string
- *           format: uuid
+ *         price:
+ *           type: number
+ *         position:
+ *           type: integer
  *         category:
  *           type: string
  *           format: uuid
- *         supplementArray:
+ *         stores:
  *           type: array
  *           items:
  *             type: object
- *             required:
- *               - supplementCategory
- *               - min
- *               - max
- *               - supplements
  *             properties:
- *               supplementCategory:
+ *               store:
  *                 type: string
  *                 format: uuid
- *               min:
+ *               quantity:
  *                 type: number
- *               max:
+ *         supplements:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               supplement:
+ *                 type: string
+ *                 format: uuid
+ *               price:
  *                 type: number
- *               supplements:
- *                 type: array
- *                 items:
- *                   type: object
- *                   required:
- *                     - supplement
- *                     - price
- *                   properties:
- *                     supplement:
- *                       type: string
- *                       format: uuid
- *                     price:
- *                       type: number
  */

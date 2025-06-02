@@ -21,5 +21,4 @@
  *                 format: uuid
  *               position:
  *                 type: integer
- *                 minimum: 1
  */

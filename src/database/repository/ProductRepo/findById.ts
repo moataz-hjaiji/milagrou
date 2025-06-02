@@ -6,29 +6,7 @@ const findById = async (
   id: string | ObjectId,
   queryString?: any
 ): Promise<IProduct | null> => {
-  let findOneQuery: Query<any, any> = ProductModel.findById(id).populate([
-    { path: 'productPrice', select: ' -createdAt -updatedAt' },
-    {
-      path: 'subCategory',
-      populate: [
-        {
-          path: 'category',
-          populate: [
-            { path: 'menu', select: '-description -createdAt -updatedAt' },
-          ],
-          select: '-description -createdAt -updatedAt',
-        },
-      ],
-      select: '-description -createdAt -updatedAt',
-    },
-    {
-      path: 'category',
-      populate: [
-        { path: 'menu', select: '-description -createdAt -updatedAt' },
-      ],
-      select: '-description -createdAt -updatedAt',
-    },
-  ]);
+  let findOneQuery: Query<any, any> = ProductModel.findById(id);
 
   const features = new APIFeatures(findOneQuery, queryString)
     .limitFields()

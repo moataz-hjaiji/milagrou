@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /areas:
+ * /areas:
  *    get:
  *      summary: Get all the Areas
  *      tags: [Area]

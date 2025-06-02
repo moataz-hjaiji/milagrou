@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /roles:
+ * /roles:
  *    get:
  *      summary: Get all the Roles
  *      tags: [Role]

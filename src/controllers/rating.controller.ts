@@ -11,9 +11,8 @@ import {
 
 export const create = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
-    const userId = req.user._id;
     const { body } = req;
-    const result = await ratingService.create({ body, userId });
+    const result = await ratingService.create({ body });
     new SuccessResponse('Rating created', result).send(res);
   }
 );
@@ -45,5 +44,14 @@ export const remove = asyncHandler(
     const { id } = req.params;
     await ratingService.remove(id);
     new SuccessMsgResponse('Rating Deleted').send(res);
+  }
+);
+
+export const update = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { id } = req.params;
+    const { body } = req;
+    const result = await ratingService.update({ id, body });
+    new SuccessResponse('Rating updated', result).send(res);
   }
 );

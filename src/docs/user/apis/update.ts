@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /users/{id}:
+ * /users/{id}:
  *    put:
  *      summary: Update user by id
  *      tags: [User]

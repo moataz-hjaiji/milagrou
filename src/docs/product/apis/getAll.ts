@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /products:
+ * /products:
  *    get:
  *      summary: Get all the Products
  *      tags: [Product]

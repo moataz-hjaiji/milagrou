@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /addresses:
+ * /addresses:
  *    get:
  *      summary: Get all the Addresss
  *      tags: [Address]

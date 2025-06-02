@@ -6,74 +6,42 @@ export default {
     id: JoiObjectId().required(),
   }),
 
-  create: Joi.object()
-    .keys({
-      nameFr: Joi.string()
-        .min(3)
-        .required()
-        .pattern(/^[a-zA-ZÀ-ÿ\s'-]+$/),
-      nameAr: Joi.string()
-        .min(3)
-        .required()
-        .pattern(/^[\u0600-\u06FF\s]+$/),
-      descriptionFr: Joi.string()
-        .min(3)
-        .pattern(/^[a-zA-ZÀ-ÿ0-9\s'".,;:!?@#$%^&*()_+=\[\]{}|\\<>\/\n-]+$/),
-      descriptionAr: Joi.string()
-        .min(3)
-        .pattern(/^[\u0600-\u06FF0-9\s'".,;:!؟@#$%^&*()_+=\[\]{}|\\<>\/\n-]+$/),
-      isAvailable: Joi.boolean().required(),
-      isRecommended: Joi.boolean().required(),
-      subCategory: JoiObjectId(),
-      category: JoiObjectId(),
-      supplementArray: Joi.array().items(
-        Joi.object({
-          supplementCategory: JoiObjectId().required(),
-          min: Joi.number().min(0).required(),
-          max: Joi.number().min(Joi.ref('min')).required(),
-          supplements: Joi.array()
-            .items(
-              Joi.object({
-                supplement: JoiObjectId().required(),
-                price: Joi.number().min(0).required(),
-              })
-            )
-            .required(),
-        })
-      ),
-    })
-    .xor('subCategory', 'category'),
+  create: Joi.object().keys({
+    name: Joi.string().min(3).required(),
+    description: Joi.string().min(3).required(),
+    price: Joi.number().required().min(0),
+    position: Joi.number().integer().min(0),
+    category: JoiObjectId().required(),
+    stores: Joi.array().items(
+      Joi.object({
+        store: JoiObjectId().required(),
+        quantity: Joi.number().min(0).required(),
+      })
+    ),
+    supplements: Joi.array().items(
+      Joi.object({
+        supplement: JoiObjectId().required(),
+        price: Joi.number().min(0).required(),
+      })
+    ),
+  }),
 
   update: Joi.object().keys({
-    nameFr: Joi.string()
-      .min(3)
-      .pattern(/^[a-zA-ZÀ-ÿ\s'-]+$/),
-    nameAr: Joi.string()
-      .min(3)
-      .pattern(/^[\u0600-\u06FF\s]+$/),
-    descriptionFr: Joi.string()
-      .min(3)
-      .pattern(/^[a-zA-ZÀ-ÿ0-9\s'".,;:!?@#$%^&*()_+=\[\]{}|\\<>\/\n-]+$/),
-    descriptionAr: Joi.string()
-      .min(3)
-      .pattern(/^[\u0600-\u06FF0-9\s'".,;:!؟@#$%^&*()_+=\[\]{}|\\<>\/\n-]+$/),
-    isAvailable: Joi.boolean(),
-    isRecommended: Joi.boolean(),
-    subCategory: JoiObjectId(),
+    name: Joi.string().min(3),
+    description: Joi.string().min(3),
+    price: Joi.number().min(0),
+    position: Joi.number().integer().min(0),
     category: JoiObjectId(),
-    supplementArray: Joi.array().items(
+    stores: Joi.array().items(
       Joi.object({
-        supplementCategory: JoiObjectId().required(),
-        min: Joi.number().min(0).required(),
-        max: Joi.number().min(Joi.ref('min')).required(),
-        supplements: Joi.array()
-          .items(
-            Joi.object({
-              supplement: JoiObjectId().required(),
-              price: Joi.number().min(0).required(),
-            })
-          )
-          .required(),
+        store: JoiObjectId(),
+        quantity: Joi.number().min(0),
+      })
+    ),
+    supplements: Joi.array().items(
+      Joi.object({
+        supplement: JoiObjectId(),
+        price: Joi.number().min(0),
       })
     ),
   }),

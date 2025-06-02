@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /categories:
+ * /categories:
  *    get:
  *      summary: Get all the Categorys
  *      tags: [Category]

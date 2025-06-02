@@ -1,0 +1,1 @@
+{"version":3,"file":"aggregate.js","sourceRoot":"","sources":["../../../../src/database/repository/GovernorateRepo/aggregate.ts"],"names":[],"mappings":";;AACA,yDAA2D;AAE3D,MAAM,SAAS,GAAG,KAAK,EAAE,GAAoB,EAAE,EAAE;IAC/C,OAAO,MAAM,8BAAgB,CAAC,SAAS,CAAC,GAAG,CAAC,CAAC;AAC/C,CAAC,CAAC;AAEF,kBAAe,SAAS,CAAC"}

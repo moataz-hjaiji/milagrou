@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /orders:
+ * /orders:
  *    get:
  *      summary: Get all the Orders
  *      tags: [Order]

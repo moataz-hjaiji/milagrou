@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /permissions:
+ * /permissions:
  *    get:
  *      summary: Get all the Permissions
  *      tags: [Permission]

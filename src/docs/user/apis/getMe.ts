@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /users/me:
+ * /users/me:
  *    get:
  *      summary: Get my profile info
  *      tags: [User]

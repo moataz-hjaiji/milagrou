@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /users/me:
+ * /users/me:
  *    put:
  *      summary: Update my profile
  *      tags: [User]

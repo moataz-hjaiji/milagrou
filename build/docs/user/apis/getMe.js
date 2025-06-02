@@ -1,0 +1,25 @@
+"use strict";
+/**
+ * @swagger
+ * /users/me:
+ *    get:
+ *      summary: Get my profile info
+ *      tags: [User]
+ *      security:
+ *        - bearerAuth: []
+ *      responses:
+ *        200:
+ *          content:
+ *            application/json:
+ *              schema:
+ *                $ref: '#/components/schemas/GetUser'
+ *        400:
+ *          description: 	Validation Failed
+ *        401:
+ *          description: Error Token
+ *        403:
+ *          description: Access Denied / Unauthorized
+ *        500:
+ *          description: Internal server error
+ */
+//# sourceMappingURL=getMe.js.map

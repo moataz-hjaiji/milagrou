@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /governorates:
+ * /governorates:
  *    get:
  *      summary: Get all the Governorates
  *      tags: [Governorate]

@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /payment-methods:
+ * /payment-methods:
  *    get:
  *      summary: Get all the PaymentMethods
  *      tags: [PaymentMethod]

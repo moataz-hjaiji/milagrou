@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /users:
+ * /users:
  *    get:
  *      summary: Get all the users
  *      tags: [User]

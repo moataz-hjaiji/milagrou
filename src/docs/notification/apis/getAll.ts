@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /notifications:
+ * /notifications:
  *    get:
  *      summary: Get all the Notifications
  *      security:

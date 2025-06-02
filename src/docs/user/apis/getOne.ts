@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /users/{id}:
+ * /users/{id}:
  *    get:
  *      summary: Get one user by id
  *      tags: [User]

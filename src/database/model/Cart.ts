@@ -3,6 +3,7 @@ import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
 import IUser, { USER_DOCUMENT_NAME } from './User';
 import IProduct, { PRODUCT_DOCUMENT_NAME } from './Product';
+import { SUPPLEMENT_DOCUMENT_NAME } from './Supplement';
 
 export const CART_DOCUMENT_NAME = 'Cart';
 const CART_COLLECTION_NAME = 'Carts';
@@ -15,8 +16,8 @@ export enum CartAction {
 export interface ICartItem {
   _id: ObjectId;
   product: ObjectId | IProduct;
+  supplements: ObjectId[] | IProduct[];
   quantity: number;
-  notes?: string;
 }
 
 export default interface ICart extends Document {
@@ -37,11 +38,14 @@ const schema = new Schema<ICart>(
           type: Schema.Types.ObjectId,
           ref: () => PRODUCT_DOCUMENT_NAME,
         },
+        supplements: [
+          {
+            type: Schema.Types.ObjectId,
+            ref: () => SUPPLEMENT_DOCUMENT_NAME,
+          },
+        ],
         quantity: {
           type: Number,
-        },
-        notes: {
-          type: Schema.Types.String,
         },
       },
     ],

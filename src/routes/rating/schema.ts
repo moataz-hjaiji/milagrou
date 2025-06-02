@@ -7,10 +7,13 @@ export default {
   }),
 
   create: Joi.object().keys({
-    orderId: JoiObjectId().required(),
-    foodRating: Joi.number().min(1).max(5).multiple(1).required(),
-    foodComment: Joi.string(),
-    deliveryRating: Joi.number().min(1).max(5).multiple(1).required(),
-    deliveryComment: Joi.string(),
+    userId: JoiObjectId().required(),
+    productId: JoiObjectId().required(),
+    rating: Joi.number().min(1).max(5).multiple(1).required(),
+    comment: Joi.string().required(),
+  }),
+
+  update: Joi.object().keys({
+    isAccepted: Joi.boolean(),
   }),
 };

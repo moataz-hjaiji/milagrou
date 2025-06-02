@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /promo-codes:
+ * /promo-codes:
  *    get:
  *      summary: Get all the PromoCodes
  *      tags: [PromoCode]

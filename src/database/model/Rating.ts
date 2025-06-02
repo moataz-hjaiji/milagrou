@@ -1,8 +1,7 @@
 import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
-import { ORDER_DOCUMENT_NAME } from './Order';
-import IProduct from './Product';
+import IProduct, { PRODUCT_DOCUMENT_NAME } from './Product';
 import IUser, { USER_DOCUMENT_NAME } from './User';
 
 export const RATING_DOCUMENT_NAME = 'Rating';
@@ -10,11 +9,10 @@ const RATING_COLLECTION_NAME = 'Ratings';
 
 export default interface IRating extends Document {
   userId: IUser | ObjectId | string;
-  orderId: IProduct | ObjectId | string;
-  foodRating: number;
-  foodComment: string;
-  deliveryRating: number;
-  deliveryComment: string;
+  productId: IProduct | ObjectId | string;
+  rating: number;
+  comment: string;
+  isAccepted: boolean;
   deletedAt?: Date;
 }
 
@@ -24,21 +22,18 @@ const schema = new Schema<IRating>(
       type: Schema.Types.ObjectId,
       ref: () => USER_DOCUMENT_NAME,
     },
-    orderId: {
+    productId: {
       type: Schema.Types.ObjectId,
-      ref: () => ORDER_DOCUMENT_NAME,
+      ref: () => PRODUCT_DOCUMENT_NAME,
     },
-    foodRating: {
+    rating: {
       type: Schema.Types.Number,
     },
-    foodComment: {
+    comment: {
       type: Schema.Types.String,
     },
-    deliveryRating: {
-      type: Schema.Types.Number,
-    },
-    deliveryComment: {
-      type: Schema.Types.String,
+    isAccepted: {
+      type: Schema.Types.Boolean,
     },
     deletedAt: {
       type: Date,

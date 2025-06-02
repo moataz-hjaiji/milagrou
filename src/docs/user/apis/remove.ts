@@ -1,6 +1,6 @@
 /**
  * @swagger
- *  /users/{id}:
+ * /users/{id}:
  *    delete:
  *      summary: Delete user by id
  *      tags: [User]

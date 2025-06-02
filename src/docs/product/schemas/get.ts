@@ -5,46 +5,37 @@
  *     GetProduct:
  *       type: object
  *       properties:
- *         nameFr:
+ *         name:
  *           type: string
- *         nameAr:
+ *         description:
  *           type: string
- *         descriptionFr:
- *           type: string
- *         descriptionAr:
- *           type: string
- *         isAvailable:
- *           type: boolean
- *         isRecommended:
- *           type: boolean
- *         images:
- *           type: array
- *           items:
- *             type: string
- *         subCategory:
- *           type: object
+ *         price:
+ *           type: number
+ *         position:
+ *           type: integer
  *         category:
- *           type: object
- *         supplementArray:
+ *           type: string
+ *           format: uuid
+ *         stores:
  *           type: array
  *           items:
  *             type: object
  *             properties:
- *               supplementCategory:
- *                 type: object
- *               min:
+ *               store:
+ *                 type: string
+ *                 format: uuid
+ *               quantity:
  *                 type: number
- *               max:
+ *         supplements:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               supplement:
+ *                 type: string
+ *                 format: uuid
+ *               price:
  *                 type: number
- *               supplements:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     supplement:
- *                       type: object
- *                     price:
- *                       type: number
  *         createdAt:
  *           type: string
  *         updatedAt:

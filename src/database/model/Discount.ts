@@ -13,9 +13,7 @@ export enum DiscountType {
 }
 
 interface ITarget {
-  menuId?: ObjectId | string;
   categoryId?: ObjectId | string;
-  subCategoryId?: ObjectId | string;
   productId?: ObjectId | string;
 }
 

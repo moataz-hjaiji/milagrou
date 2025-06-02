@@ -33,6 +33,14 @@ router
     validator(schema.param, ValidationSource.PARAM),
     ratingController.getOne
   )
+  .put(
+    authentication,
+    assignAction({ action: ACTIONS.update, entity: 'Rating' }),
+    authorization,
+    validator(schema.param, ValidationSource.PARAM),
+    validator(schema.update),
+    ratingController.update
+  )
   .delete(
     assignAction({ action: ACTIONS.delete, entity: 'Rating' }),
     authorization,
