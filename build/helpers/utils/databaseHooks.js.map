@@ -1,1 +1,0 @@
-{"version":3,"file":"databaseHooks.js","sourceRoot":"","sources":["../../../src/helpers/utils/databaseHooks.ts"],"names":[],"mappings":";;;AAGA,SAAgB,WAAW,CAAC,MAAc;IACxC,MAAM,CAAC,GAAG,CAAC,OAAO,EAAE,UAAqB,IAAkB;QACzD,IAAI,CAAC,IAAI,CAAC,EAAE,SAAS,EAAE,IAAI,EAAE,CAAC,CAAC;QAC/B,IAAI,EAAE,CAAC;IACT,CAAC,CAAC,CAAC;AACL,CAAC;AALD,kCAKC"}

@@ -1,1 +1,0 @@
-{"version":3,"file":"checkFavourite.js","sourceRoot":"","sources":["../../../src/services/favourite/checkFavourite.ts"],"names":[],"mappings":";;;;;;AAAA,4FAAoE;AAE7D,KAAK,UAAU,cAAc,CAAC,MAAc,EAAE,OAAe;IAClE,MAAM,SAAS,GAAG,MAAM,uBAAa,CAAC,SAAS,CAAC;QAC9C,MAAM;QACN,OAAO;KACR,CAAC,CAAC;IACH,OAAO,CAAC,CAAC,SAAS,CAAC;AACrB,CAAC;AAND,wCAMC"}
