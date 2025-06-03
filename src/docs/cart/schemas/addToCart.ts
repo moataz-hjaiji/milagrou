@@ -13,28 +13,9 @@
  *           format: uuid
  *         quantity:
  *           type: integer
- *           minimum: 1
- *         selectedSupplements:
+ *         supplements:
  *           type: array
  *           items:
- *             type: object
- *             required:
- *               - supplementCategory
- *               - supplements
- *             properties:
- *               supplementCategory:
- *                 type: string
- *                 format: uuid
- *               supplements:
- *                 type: array
- *                 items:
- *                   type: object
- *                   required:
- *                     - supplement
- *                   properties:
- *                     supplement:
- *                       type: string
- *                       format: uuid
- *         notes:
- *           type: string
+ *             type: string
+ *             format: uuid
  */

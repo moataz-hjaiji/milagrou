@@ -3,7 +3,7 @@ import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
 import IUser, { USER_DOCUMENT_NAME } from './User';
 import IProduct, { PRODUCT_DOCUMENT_NAME } from './Product';
-import { SUPPLEMENT_DOCUMENT_NAME } from './Supplement';
+import ISupplement, { SUPPLEMENT_DOCUMENT_NAME } from './Supplement';
 
 export const CART_DOCUMENT_NAME = 'Cart';
 const CART_COLLECTION_NAME = 'Carts';
@@ -16,7 +16,7 @@ export enum CartAction {
 export interface ICartItem {
   _id: ObjectId;
   product: ObjectId | IProduct;
-  supplements: ObjectId[] | IProduct[];
+  supplements: ObjectId[] | ISupplement[];
   quantity: number;
 }
 

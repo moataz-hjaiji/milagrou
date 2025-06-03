@@ -1,9 +1,8 @@
 import express from 'express';
 import authentication from '../../authUtils/authentication';
 import * as cartController from '../../controllers/cart.controller';
-import validator, { ValidationSource } from '../../helpers/utils/validator';
+import validator from '../../helpers/utils/validator';
 import schema from './schema';
-import authorization from '../../authUtils/authorization';
 
 const router = express.Router();
 

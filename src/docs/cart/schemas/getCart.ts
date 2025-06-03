@@ -23,22 +23,10 @@
  *                 format: uuid
  *               quantity:
  *                 type: integer
- *               selectedSupplements:
+ *               supplements:
  *                 type: array
  *                 items:
- *                   type: object
- *                   properties:
- *                     supplementCategory:
- *                       type: string
- *                       format: uuid
- *                     supplements:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           supplement:
- *                             type: string
- *                             format: uuid
- *               notes:
- *                 type: string
+ *                   type: string
+ *                   format: uuid
+ *
  */

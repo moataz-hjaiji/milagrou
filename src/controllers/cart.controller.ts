@@ -3,11 +3,7 @@ import asyncHandler from '../helpers/utils/asyncHandler';
 import { ProtectedRequest } from '../types/app-request';
 import cartService from '../services/cart';
 
-import {
-  SuccessMsgResponse,
-  SuccessResponse,
-  SuccessResponsePaginate,
-} from '../core/ApiResponse';
+import { SuccessResponse } from '../core/ApiResponse';
 
 export const addToCart = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {

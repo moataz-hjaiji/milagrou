@@ -10,20 +10,7 @@ export default {
   addToCart: Joi.object().keys({
     product: JoiObjectId().required(),
     quantity: Joi.number().integer().min(1).required(),
-    selectedSupplements: Joi.array().items(
-      Joi.object().keys({
-        supplementCategory: JoiObjectId().required(),
-        supplements: Joi.array()
-          .items(
-            Joi.object().keys({
-              supplement: JoiObjectId().required(),
-            })
-          )
-          .min(1)
-          .required(),
-      })
-    ),
-    notes: Joi.string(),
+    supplements: Joi.array().items(JoiObjectId()),
   }),
 
   incrementOrDecrement: Joi.object().keys({
@@ -40,20 +27,7 @@ export default {
   editItem: Joi.object().keys({
     itemId: JoiObjectId().required(),
     item: Joi.object().keys({
-      selectedSupplements: Joi.array().items(
-        Joi.object().keys({
-          supplementCategory: JoiObjectId().required(),
-          supplements: Joi.array()
-            .items(
-              Joi.object().keys({
-                supplement: JoiObjectId().required(),
-              })
-            )
-            .min(1)
-            .required(),
-        })
-      ),
-      notes: Joi.string(),
+      supplements: Joi.array().items(JoiObjectId()),
     }),
   }),
 };
