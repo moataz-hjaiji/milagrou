@@ -7,13 +7,17 @@ export const STORE_DOCUMENT_NAME = 'Store';
 const STORE_COLLECTION_NAME = 'Stores';
 
 export default interface IStore extends Document {
-  name: string;
+  nameAng: string;
+  nameAr: string;
   deletedAt?: Date;
 }
 
 const schema = new Schema<IStore>(
   {
-    name: {
+    nameAng: {
+      type: Schema.Types.String,
+    },
+    nameAr: {
       type: Schema.Types.String,
     },
     deletedAt: {
@@ -29,15 +33,20 @@ const schema = new Schema<IStore>(
 );
 
 schema.pre('save', async function (this: IStore, next) {
-  await checkDuplicateKey('name', this.name, StoreModel, this._id);
+  await checkDuplicateKey('nameAng', this.nameAng, StoreModel, this._id);
+  await checkDuplicateKey('nameAr', this.nameAr, StoreModel, this._id);
   next();
 });
 
 schema.pre('findOneAndUpdate', async function (next) {
-  const update = this.getUpdate() as { $set?: { name?: string } };
+  const update = this.getUpdate() as {
+    $set?: { nameAng?: string; nameAr?: string };
+  };
   const id = this.getQuery()._id;
-  const name = update?.$set?.name;
-  if (name) await checkDuplicateKey('name', name, StoreModel, id);
+  const nameAng = update?.$set?.nameAng;
+  if (nameAng) await checkDuplicateKey('nameAng', nameAng, StoreModel, id);
+  const nameAr = update?.$set?.nameAr;
+  if (nameAr) await checkDuplicateKey('nameAr', nameAr, StoreModel, id);
   next();
 });
 

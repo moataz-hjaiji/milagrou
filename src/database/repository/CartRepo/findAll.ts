@@ -5,7 +5,6 @@ import APIFeatures from '../../../helpers/utils/apiFeatures';
 type pagingObj = {
   limit: number;
   page: number;
-  populate: string;
 };
 
 const findAll = async (
@@ -25,7 +24,6 @@ const findAll = async (
     query: features.query,
     limit: paging.limit ? paging.limit : null,
     page: paging.page ? paging.page : null,
-    populate: paging.populate ? paging.populate : null,
   };
   return (await CartModel.paginate(options)) as PaginationModel<ICart>;
 };

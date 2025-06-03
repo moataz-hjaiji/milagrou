@@ -11,23 +11,34 @@ export async function calculateItemPrices(cartData: any) {
         const basePrice = product?.price || 0;
         const priceAfterDiscount = await getMaxDiscountedPrice(product);
 
-        // Calculate supplements price from product's supplements array
-        const supplementsPrice =
-          item.supplements?.reduce((total: any, supplementId: any) => {
+        const supplementsWithPrice =
+          item.supplements?.map((supplement: any) => {
             const supplementPrice =
               product.supplements?.find(
                 (sp) =>
                   (sp.supplement as ISupplement)._id.toString() ===
-                  supplementId.toString()
+                  supplement._id.toString()
               )?.price || 0;
-            return total + supplementPrice;
-          }, 0) || 0;
+
+            return {
+              ...supplement,
+              price: supplementPrice,
+            };
+          }) || [];
+
+        const supplementsPrice = supplementsWithPrice.reduce(
+          (total: number, supplement: any) => {
+            return total + supplement.price;
+          },
+          0
+        );
 
         const totalPrice =
           (priceAfterDiscount + supplementsPrice) * item.quantity;
 
         return {
           ...item,
+          supplements: supplementsWithPrice,
           itemPrice: {
             basePrice,
             priceAfterDiscount,

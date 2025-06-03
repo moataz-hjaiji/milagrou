@@ -5,8 +5,8 @@
  *     UpdatePaymentMethod:
  *       type: object
  *       properties:
- *         name:
+ *         nameAng:
  *           type: string
- *         description:
+ *         nameAr:
  *           type: string
  */

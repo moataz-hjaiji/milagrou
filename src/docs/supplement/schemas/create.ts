@@ -5,10 +5,13 @@
  *     CreateSupplement:
  *       type: object
  *       required:
- *         - name
+ *         - nameAng
+ *         - nameAr
  *         - image
  *       properties:
- *         name:
+ *         nameAng:
+ *           type: string
+ *         nameAr:
  *           type: string
  *         image:
  *           type: string

@@ -6,16 +6,19 @@ export const SUPPLEMENT_DOCUMENT_NAME = 'Supplement';
 const SUPPLEMENT_COLLECTION_NAME = 'Supplements';
 
 export default interface ISupplement extends Document {
-  name: string;
+  nameAng: string;
+  nameAr: string;
   image: string;
   deletedAt?: Date;
 }
 
 const schema = new Schema<ISupplement>(
   {
-    name: {
+    nameAng: {
       type: Schema.Types.String,
-      trim: true,
+    },
+    nameAr: {
+      type: Schema.Types.String,
     },
     image: {
       type: Schema.Types.String,

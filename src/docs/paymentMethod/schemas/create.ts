@@ -5,10 +5,11 @@
  *     CreatePaymentMethod:
  *       type: object
  *       required:
- *         - name
+ *         - nameAng
+ *         - nameAr
  *       properties:
- *         name:
+ *         nameAng:
  *           type: string
- *         description:
+ *         nameAr:
  *           type: string
  */

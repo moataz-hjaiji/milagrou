@@ -18,7 +18,10 @@ router
     authentication,
     assignAction({ action: ACTIONS.create, entity: 'Product' }),
     authorization,
-    fileUploadHandler.handleCustomFileUpload([{ name: 'images' }]),
+    fileUploadHandler.handleCustomFileUpload([
+      { name: 'images' },
+      { name: 'coverImage' },
+    ]),
     validator(schema.create),
     productController.create
   )
@@ -42,8 +45,10 @@ router
     authentication,
     assignAction({ action: ACTIONS.update, entity: 'Product' }),
     authorization,
-    fileUploadHandler.handleCustomFileUpload([{ name: 'images' }]),
-
+    fileUploadHandler.handleCustomFileUpload([
+      { name: 'images' },
+      { name: 'coverImage' },
+    ]),
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     productController.update

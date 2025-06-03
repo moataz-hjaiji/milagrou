@@ -5,14 +5,26 @@
  *     UpdateProduct:
  *       type: object
  *       properties:
- *         name:
+ *         nameAng:
  *           type: string
- *         description:
+ *         nameAr:
+ *           type: string
+ *         descriptionAng:
+ *           type: string
+ *         descriptionAr:
  *           type: string
  *         price:
  *           type: number
  *         position:
  *           type: integer
+ *         images:
+ *           type: array
+ *           items :
+ *             type: string
+ *             format: binary
+ *         coverImage:
+ *           type: string
+ *           format: binary
  *         category:
  *           type: string
  *           format: uuid

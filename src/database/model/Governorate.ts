@@ -7,13 +7,17 @@ export const GOVERNORATE_DOCUMENT_NAME = 'Governorate';
 const GOVERNORATE_COLLECTION_NAME = 'Governorates';
 
 export default interface IGovernorate extends Document {
-  name: string;
+  nameAng: string;
+  nameAr: string;
   deletedAt?: Date;
 }
 
 const schema = new Schema<IGovernorate>(
   {
-    name: {
+    nameAng: {
+      type: Schema.Types.String,
+    },
+    nameAr: {
       type: Schema.Types.String,
     },
     deletedAt: {
@@ -29,15 +33,21 @@ const schema = new Schema<IGovernorate>(
 );
 
 schema.pre('save', async function (this: IGovernorate, next) {
-  await checkDuplicateKey('name', this.name, GovernorateModel, this._id);
+  await checkDuplicateKey('nameAng', this.nameAng, GovernorateModel, this._id);
+  await checkDuplicateKey('nameAr', this.nameAr, GovernorateModel, this._id);
   next();
 });
 
 schema.pre('findOneAndUpdate', async function (next) {
-  const update = this.getUpdate() as { $set?: { name?: string } };
+  const update = this.getUpdate() as {
+    $set?: { nameAng?: string; nameAr?: string };
+  };
   const id = this.getQuery()._id;
-  const name = update?.$set?.name;
-  if (name) await checkDuplicateKey('name', name, GovernorateModel, id);
+  const nameAng = update?.$set?.nameAng;
+  if (nameAng)
+    await checkDuplicateKey('nameAng', nameAng, GovernorateModel, id);
+  const nameAr = update?.$set?.nameAr;
+  if (nameAr) await checkDuplicateKey('nameAr', nameAr, GovernorateModel, id);
   next();
 });
 

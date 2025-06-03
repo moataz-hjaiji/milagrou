@@ -5,12 +5,22 @@
  *     GetProduct:
  *       type: object
  *       properties:
- *         name:
+ *         nameAng:
  *           type: string
- *         description:
+ *         nameAr:
+ *           type: string
+ *         descriptionAng:
+ *           type: string
+ *         descriptionAr:
  *           type: string
  *         price:
  *           type: number
+ *         images:
+ *           type: array
+ *           items :
+ *             type: string
+ *         coverImage:
+ *           type: string
  *         position:
  *           type: integer
  *         category:

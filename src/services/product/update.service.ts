@@ -18,6 +18,14 @@ export const update = async ({ id, body, files }: updateParams) => {
       const imagesArray = images.map((file) => file.path);
       body.images = imagesArray;
     }
+    if ('coverImage' in files) {
+      const coverImage = (
+        files as {
+          [fieldname: string]: Express.Multer.File[];
+        }
+      )['coverImage'];
+      body.coverImage = coverImage[0].path;
+    }
   }
 
   const product = await ProductRepo.update(id, body);

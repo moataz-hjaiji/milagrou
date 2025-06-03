@@ -17,7 +17,15 @@ export const create = async ({ body, files }: createParams) => {
       const imagesArray = images.map((file) => file.path);
       body.images = imagesArray;
     }
-  } else throw new BadRequestError('images were not provided');
+    if ('coverImage' in files) {
+      const coverImage = (
+        files as {
+          [fieldname: string]: Express.Multer.File[];
+        }
+      )['coverImage'];
+      body.coverImage = coverImage[0].path;
+    }
+  }
 
   const product = await ProductRepo.create(body);
   if (!product) throw new BadRequestError('error creating product');

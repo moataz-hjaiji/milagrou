@@ -7,12 +7,6 @@ interface updateParams {
 }
 
 export const update = async ({ id, body }: updateParams) => {
-  if (body.code) {
-    const checkPromoCode = await PromoCodeRepo.findByObj({ code: body.code });
-    if (checkPromoCode)
-      throw new BadRequestError('Promo code with that code already exists');
-  }
-
   const promoCode = await PromoCodeRepo.update(id, body);
   if (!promoCode) throw new BadRequestError('promoCode not found');
   return promoCode;

@@ -7,8 +7,10 @@ export default {
   }),
 
   create: Joi.object().keys({
-    name: Joi.string().min(3).required(),
-    description: Joi.string().min(3).required(),
+    nameAng: Joi.string().required(),
+    nameAr: Joi.string().required(),
+    descriptionAng: Joi.string().min(3).required(),
+    descriptionAr: Joi.string().min(3).required(),
     price: Joi.number().required().min(0),
     position: Joi.number().integer().min(0),
     category: JoiObjectId().required(),
@@ -27,8 +29,10 @@ export default {
   }),
 
   update: Joi.object().keys({
-    name: Joi.string().min(3),
-    description: Joi.string().min(3),
+    nameAng: Joi.string(),
+    nameAr: Joi.string(),
+    descriptionAng: Joi.string().min(3),
+    descriptionAr: Joi.string().min(3),
     price: Joi.number().min(0),
     position: Joi.number().integer().min(0),
     category: JoiObjectId(),

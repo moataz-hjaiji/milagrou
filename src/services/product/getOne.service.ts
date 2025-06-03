@@ -5,7 +5,16 @@ import { getMaxDiscountedPrice } from '../discount/getMaxDiscount';
 export const getOne = async (id: string, query: any) => {
   let product = await ProductRepo.findById(id, query);
   if (!product) throw new BadRequestError('Product not found');
-  await product.populate('category');
+  await product.populate([
+    {
+      path: 'category',
+      select: '-createdAt -updatedAt',
+    },
+    {
+      path: 'supplements.supplement',
+      select: '-createdAt -updatedAt',
+    },
+  ]);
   const productObject = product.toObject();
   const priceAfterDiscount = await getMaxDiscountedPrice(productObject);
   productObject.priceAfterDiscount = priceAfterDiscount;

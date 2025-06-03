@@ -21,8 +21,6 @@ router
 
 router.post('/checkout', validator(schema.checkout), orderController.checkout);
 
-router.put('/cancel/:id', orderController.cancelOrder);
-
 router
   .route('/:id')
   .get(

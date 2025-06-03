@@ -6,20 +6,18 @@ export const PAYMENT_METHOD_DOCUMENT_NAME = 'PaymentMethod';
 const PAYMENT_METHOD_COLLECTION_NAME = 'PaymentMethods';
 
 export default interface IPaymentMethod extends Document {
-  name: string;
-  description: string;
+  nameAng: string;
+  nameAr: string;
   deletedAt?: Date;
 }
 
 const schema = new Schema<IPaymentMethod>(
   {
-    name: {
+    nameAng: {
       type: Schema.Types.String,
-      trim: true,
     },
-    description: {
+    nameAr: {
       type: Schema.Types.String,
-      trim: true,
     },
     deletedAt: {
       type: Date,

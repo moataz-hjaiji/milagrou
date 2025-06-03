@@ -1,15 +1,12 @@
 import { ObjectId } from 'mongoose';
 import { BadRequestError, NotFoundError } from '../../core/ApiError';
-
 import CartRepo from '../../database/repository/CartRepo';
 import OrderRepo from '../../database/repository/OrderRepo';
-import RoleRepo from '../../database/repository/RoleRepo';
-import UserRepo from '../../database/repository/UserRepo';
-import { sendNotifUser } from '../../helpers/notif';
 import { calculateOrderPrices } from './calculateOrderPrices';
 import { DeliveryType, OrderStatus } from '../../database/model/Order';
 import PromoCodeRepo from '../../database/repository/PromoCodeRepo';
 import { DiscountType } from '../../database/model/Discount';
+import DeliveryPriceRepo from '../../database/repository/DeliveryPriceRepo';
 
 interface checkoutParams {
   userId: ObjectId;
@@ -33,50 +30,20 @@ export const checkout = async ({
     {
       path: 'items.product',
       populate: [
-        { path: 'productPrice', select: ' -createdAt -updatedAt' },
-        {
-          path: 'supplementArray.supplementCategory',
-          select: '-description -createdAt -updatedAt',
-        },
-        {
-          path: 'supplementArray.supplements.supplement',
-          select: '-description -createdAt -updatedAt',
-        },
-        {
-          path: 'subCategory',
-          populate: [
-            {
-              path: 'category',
-              populate: [
-                { path: 'menu', select: '-description -createdAt -updatedAt' },
-              ],
-              select: '-description -createdAt -updatedAt',
-            },
-          ],
-          select: '-description -createdAt -updatedAt',
-        },
         {
           path: 'category',
-          populate: [
-            { path: 'menu', select: '-description -createdAt -updatedAt' },
-          ],
-          select: '-description -createdAt -updatedAt',
+          select: '-createdAt -updatedAt',
+        },
+        {
+          path: 'supplements.supplement',
+          select: '-createdAt -updatedAt',
         },
       ],
       select: '-createdAt -updatedAt',
     },
     {
-      path: 'items.selectedSupplements',
-      populate: [
-        {
-          path: 'supplementCategory',
-          select: '-description -createdAt -updatedAt',
-        },
-        {
-          path: 'supplements.supplement',
-          select: '-description -createdAt -updatedAt',
-        },
-      ],
+      path: 'items.supplements',
+      select: '-createdAt -updatedAt',
     },
   ]);
 
@@ -128,6 +95,17 @@ export const checkout = async ({
 
   let orderPrice = orderPriceWithoutDeliveryPrice;
 
+  if (deliveryType === DeliveryType.DELIVERY) {
+    const deliveryPrice = await DeliveryPriceRepo.findByObj({ isActive: true });
+    if (!deliveryPrice) throw new NotFoundError('deliveryPrice not found');
+    if (
+      deliveryPrice.freeDeliveryOption === false ||
+      (deliveryPrice.freeDeliveryOption === true &&
+        deliveryPrice.freeAfter! <= orderPrice)
+    )
+      orderPrice += deliveryPrice.price;
+  }
+
   const orderNewIdCheck = await OrderRepo.getLastNewId();
 
   let newId = 1;
@@ -139,40 +117,21 @@ export const checkout = async ({
     deliveryType,
     paymentMethodId,
     addressId,
-    status: OrderStatus.PENDING,
-    items,
     orderPrice,
     orderPriceWithoutDeliveryPrice,
     newId,
     promoCodeId: promoCode?._id,
+    items,
   } as any);
 
   if (promoCode) {
     ++promoCode.actualUsage;
+    promoCode.users.push(userId);
     await promoCode.save();
   }
 
   cart.items = [];
   await cart.save();
-
-  const roleAdmin = await RoleRepo.findByCode('admin');
-  if (!roleAdmin) throw new NotFoundError('admin role not found');
-
-  const admins = await UserRepo.findAllNotPaginated({
-    roles: roleAdmin._id,
-  });
-
-  await Promise.all(
-    admins.map(async (admin) => {
-      await sendNotifUser(admin._id.toString(), {
-        data: {
-          title: 'Nouvelle commande',
-          body: `Vous avez une nouvelle commande.`,
-          orderId: order._id,
-        },
-      });
-    })
-  );
 
   return order;
 };

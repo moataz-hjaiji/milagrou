@@ -5,10 +5,13 @@
  *     CreateArea:
  *       type: object
  *       required:
- *         - name
+ *         - nameAng
+ *         - nameAr
  *         - governorateId
  *       properties:
- *         name:
+ *         nameAng:
+ *           type: string
+ *         nameAr:
  *           type: string
  *         governorateId:
  *           type: string

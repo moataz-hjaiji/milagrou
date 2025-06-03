@@ -5,7 +5,9 @@
  *     GetCategory:
  *       type: object
  *       properties:
- *         name:
+ *         nameAng:
+ *           type: string
+ *         nameAr:
  *           type: string
  *         createdAt:
  *           type: string

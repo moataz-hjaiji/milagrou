@@ -6,7 +6,21 @@ export const getAll = async (query: any) => {
   const options = {
     page: parseInt(page as string, 10) || 1,
     limit: parseInt(perPage as string, 10) || 10,
-    populate: 'product.category',
+    populate: [
+      {
+        path: 'product',
+        populate: [
+          {
+            path: 'category',
+            select: '-createdAt -updatedAt',
+          },
+          {
+            path: 'supplements.supplement',
+            select: '-createdAt -updatedAt',
+          },
+        ],
+      },
+    ],
   };
 
   const favourites = await FavouriteRepo.findAll(options, query);

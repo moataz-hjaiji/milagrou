@@ -62,12 +62,3 @@ export const remove = asyncHandler(
     new SuccessMsgResponse('Order Deleted').send(res);
   }
 );
-
-export const cancelOrder = asyncHandler(
-  async (req: ProtectedRequest, res: Response) => {
-    const { id } = req.params;
-    const userId = req.user._id;
-    const result = await orderService.cancelOrder(id, userId);
-    new SuccessResponse('Order canceled', result).send(res);
-  }
-);

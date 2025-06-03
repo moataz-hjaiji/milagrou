@@ -5,7 +5,7 @@ import APIFeatures from '../../../helpers/utils/apiFeatures';
 type pagingObj = {
   limit: number;
   page: number;
-  populate: string;
+  populate: any;
 };
 
 const findAll = async (

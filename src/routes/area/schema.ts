@@ -7,12 +7,14 @@ export default {
   }),
 
   create: Joi.object().keys({
-    name: Joi.string().required(),
+    nameAng: Joi.string().required(),
+    nameAr: Joi.string().required(),
     governorateId: JoiObjectId().required(),
   }),
 
   update: Joi.object().keys({
-    name: Joi.string(),
+    nameAng: Joi.string(),
+    nameAr: Joi.string(),
     governorateId: JoiObjectId(),
   }),
 };

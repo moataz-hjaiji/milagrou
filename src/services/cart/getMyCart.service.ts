@@ -15,13 +15,22 @@ export const getMyCart = async (userId: ObjectId) => {
 
   await cart.populate([
     {
-      path: 'items.product.category',
-    },
-    {
-      path: 'items.product.supplements.supplement',
+      path: 'items.product',
+      populate: [
+        {
+          path: 'category',
+          select: '-createdAt -updatedAt',
+        },
+        {
+          path: 'supplements.supplement',
+          select: '-createdAt -updatedAt',
+        },
+      ],
+      select: '-createdAt -updatedAt',
     },
     {
       path: 'items.supplements',
+      select: '-createdAt -updatedAt',
     },
   ]);
 

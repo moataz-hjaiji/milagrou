@@ -16,10 +16,10 @@ export const update = async ({ id, body }: updateParams) => {
   const checkUntouchableRoles = await RoleRepo.findById(id);
   if (
     checkUntouchableRoles &&
-    ['user', 'admin', 'delivery'].includes(checkUntouchableRoles.name)
+    ['user', 'admin'].includes(checkUntouchableRoles.name)
   ) {
     throw new BadRequestError(
-      'role name invalid: you cant change standard role names (admin, user, delivery)'
+      'role name invalid: you cant change standard role names (admin, user)'
     );
   }
 

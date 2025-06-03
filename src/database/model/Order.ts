@@ -6,18 +6,27 @@ import IPaymentMethod, { PAYMENT_METHOD_DOCUMENT_NAME } from './PaymentMethod';
 import IProduct, { PRODUCT_DOCUMENT_NAME } from './Product';
 import IUser, { USER_DOCUMENT_NAME } from './User';
 import IPromoCode, { PROMO_CODE_DOCUMENT_NAME } from './PromoCode';
+import ISupplement, { SUPPLEMENT_DOCUMENT_NAME } from './Supplement';
 
 export const ORDER_DOCUMENT_NAME = 'Order';
 const ORDER_COLLECTION_NAME = 'Orders';
 
 export const enum OrderStatus {
   PENDING = 'PENDING',
-  CANCELED = 'CANCELED',
-  ACCEPTED = 'ACCEPTED',
-  PREPARING = 'PREPARING',
-  PREPARED = 'PREPARED',
-  DELIVERING = 'DELIVERING',
+  SHIPPED = 'SHIPPED',
   DELIVERED = 'DELIVERED',
+}
+
+export const enum PaymentStatus {
+  UNPAID = 'UNPAID',
+  PAID = 'PAID',
+  REFUNDED = 'REFUNDED',
+}
+
+export const enum OrderType {
+  NORMAL = 'NORMAL',
+  GIFT = 'GIFT',
+  RESERVATION = 'RESERVATION',
 }
 
 export const enum DeliveryType {
@@ -25,25 +34,20 @@ export const enum DeliveryType {
   PICKUP = 'PICKUP',
 }
 
-export interface IOrderItem {
-  _id: ObjectId;
-  product: ObjectId | IProduct;
-  quantity: number;
-  itemPrice: number;
-  notes?: string;
-}
-
 export default interface IOrder extends Document {
   userId: IUser | ObjectId;
   deliveryType: DeliveryType;
+  paymentStatus: PaymentStatus;
+  orderType: OrderType;
+  status: OrderStatus;
   paymentMethodId: IPaymentMethod | ObjectId;
   addressId?: IAddress | ObjectId;
   promoCodeId?: IPromoCode | ObjectId;
-  status: string;
-  items: IOrderItem[];
+  items: any;
   orderPrice: number;
   orderPriceWithoutDeliveryPrice: number;
   newId: number;
+  reservationDate?: Date;
   deletedAt?: Date;
 }
 
@@ -55,6 +59,10 @@ const schema = new Schema<IOrder>(
     },
     deliveryType: {
       type: Schema.Types.String,
+    },
+    paymentStatus: {
+      type: Schema.Types.String,
+      default: PaymentStatus.UNPAID,
     },
     paymentMethodId: {
       type: Schema.Types.ObjectId,
@@ -74,18 +82,29 @@ const schema = new Schema<IOrder>(
     },
     items: [
       {
+        _id: false,
         product: {
-          type: Schema.Types.ObjectId,
-          ref: () => PRODUCT_DOCUMENT_NAME,
+          _id: { type: Schema.Types.ObjectId },
+          nameAng: { type: String },
+          nameAr: { type: String },
+          descriptionAng: { type: String },
+          descriptionAr: { type: String },
+          price: { type: Number },
+          images: [{ type: Number }],
         },
+        supplements: [
+          {
+            _id: { type: Schema.Types.ObjectId },
+            nameAng: { type: String },
+            nameAr: { type: String },
+            price: { type: Number },
+          },
+        ],
         quantity: {
           type: Number,
         },
         itemPrice: {
           type: Number,
-        },
-        notes: {
-          type: Schema.Types.String,
         },
       },
     ],
@@ -97,6 +116,9 @@ const schema = new Schema<IOrder>(
     },
     newId: {
       type: Number,
+    },
+    reservationDate: {
+      type: Date,
     },
     deletedAt: {
       type: Date,

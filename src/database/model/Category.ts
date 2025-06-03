@@ -7,15 +7,18 @@ export const CATEGORY_DOCUMENT_NAME = 'Category';
 const CATEGORY_COLLECTION_NAME = 'Categories';
 
 export default interface ICategory extends Document {
-  name: string;
+  nameAng: string;
+  nameAr: string;
   deletedAt?: Date;
 }
 
 const schema = new Schema<ICategory>(
   {
-    name: {
+    nameAng: {
       type: Schema.Types.String,
-      trim: true,
+    },
+    nameAr: {
+      type: Schema.Types.String,
     },
     deletedAt: {
       type: Date,
@@ -30,15 +33,20 @@ const schema = new Schema<ICategory>(
 );
 
 schema.pre('save', async function (this: ICategory, next) {
-  await checkDuplicateKey('name', this.name, CategoryModel, this._id);
+  await checkDuplicateKey('nameAng', this.nameAng, CategoryModel, this._id);
+  await checkDuplicateKey('nameAr', this.nameAr, CategoryModel, this._id);
   next();
 });
 
 schema.pre('findOneAndUpdate', async function (next) {
-  const update = this.getUpdate() as { $set?: { name?: string } };
+  const update = this.getUpdate() as {
+    $set?: { nameAng?: string; nameAr?: string };
+  };
   const id = this.getQuery()._id;
-  const name = update?.$set?.name;
-  if (name) await checkDuplicateKey('name', name, CategoryModel, id);
+  const nameAng = update?.$set?.nameAng;
+  if (nameAng) await checkDuplicateKey('nameAng', nameAng, CategoryModel, id);
+  const nameAr = update?.$set?.nameAr;
+  if (nameAr) await checkDuplicateKey('nameAr', nameAr, CategoryModel, id);
   next();
 });
 

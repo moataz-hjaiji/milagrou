@@ -1,8 +1,5 @@
 import DiscountRepo from '../../database/repository/DiscountRepo';
-import { BadRequestError, NotFoundError } from '../../core/ApiError';
-import RoleRepo from '../../database/repository/RoleRepo';
-import UserRepo from '../../database/repository/UserRepo';
-import { sendNotifUser } from '../../helpers/notif';
+import { BadRequestError } from '../../core/ApiError';
 
 interface updateParams {
   id: string;

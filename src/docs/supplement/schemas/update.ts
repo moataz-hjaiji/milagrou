@@ -5,6 +5,8 @@
  *     UpdateSupplement:
  *       type: object
  *       properties:
- *         name:
+ *         nameAng:
+ *           type: string
+ *         nameAr:
  *           type: string
  */

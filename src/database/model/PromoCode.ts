@@ -1,5 +1,6 @@
 import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
+import { checkDuplicateKey } from '../../helpers/utils/checkDuplecateKey';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
 import { DiscountType } from './Discount';
 import { USER_DOCUMENT_NAME } from './User';
@@ -71,6 +72,19 @@ const schema = new Schema<IPromoCode>(
     versionKey: false,
   }
 );
+
+schema.pre('save', async function (this: IPromoCode, next) {
+  await checkDuplicateKey('code', this.code, PromoCodeModel, this._id);
+  next();
+});
+
+schema.pre('findOneAndUpdate', async function (next) {
+  const update = this.getUpdate() as { $set?: { code?: string } };
+  const id = this.getQuery()._id;
+  const code = update?.$set?.code;
+  if (code) await checkDuplicateKey('code', code, PromoCodeModel, id);
+  next();
+});
 
 preFindHook(schema);
 schema.plugin(mongoosePagination);

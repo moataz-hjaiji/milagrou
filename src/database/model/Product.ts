@@ -19,9 +19,12 @@ interface ISupplementPrice {
 }
 
 export default interface IProduct extends Document {
-  name: string;
-  description: string;
+  nameAng: string;
+  nameAr: string;
+  descriptionAng: string;
+  descriptionAr: string;
   images: string[];
+  coverImage: string;
   price: number;
   category: ICategory | ObjectId;
   position?: number;
@@ -32,20 +35,28 @@ export default interface IProduct extends Document {
 
 const schema = new Schema<IProduct>(
   {
-    name: {
+    nameAng: {
+      type: Schema.Types.String,
+    },
+    nameAr: {
+      type: Schema.Types.String,
+    },
+    descriptionAng: {
       type: Schema.Types.String,
       trim: true,
     },
-    description: {
+    descriptionAr: {
       type: Schema.Types.String,
       trim: true,
     },
     images: [
       {
         type: Schema.Types.String,
-        trim: true,
       },
     ],
+    coverImage: {
+      type: Schema.Types.String,
+    },
     position: {
       type: Schema.Types.Number,
     },
@@ -58,6 +69,7 @@ const schema = new Schema<IProduct>(
     },
     stores: [
       {
+        _id: false,
         store: {
           type: Schema.Types.ObjectId,
           ref: () => STORE_DOCUMENT_NAME,
@@ -69,6 +81,7 @@ const schema = new Schema<IProduct>(
     ],
     supplements: [
       {
+        _id: false,
         supplement: {
           type: Schema.Types.ObjectId,
           ref: () => SUPPLEMENT_DOCUMENT_NAME,

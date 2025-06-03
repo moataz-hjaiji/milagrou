@@ -5,8 +5,11 @@
  *     CreateCategory:
  *       type: object
  *       required:
- *         - name
+ *         - nameAng
+ *         - nameAr
  *       properties:
- *         name:
+ *         nameAng:
+ *           type: string
+ *         nameAr:
  *           type: string
  */

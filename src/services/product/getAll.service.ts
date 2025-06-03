@@ -9,7 +9,16 @@ export const getAll = async (query: any) => {
   const options = {
     page: parseInt(page as string, 10) || 1,
     limit: parseInt(perPage as string, 10) || 10,
-    populate: 'category',
+    populate: [
+      {
+        path: 'category',
+        select: '-createdAt -updatedAt',
+      },
+      {
+        path: 'supplements.supplement',
+        select: '-createdAt -updatedAt',
+      },
+    ],
   };
 
   let products = await ProductRepo.findAll(options, query);

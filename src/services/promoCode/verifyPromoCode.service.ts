@@ -44,50 +44,20 @@ export const verifyPromoCode = async ({
     {
       path: 'items.product',
       populate: [
-        { path: 'productPrice', select: ' -createdAt -updatedAt' },
-        {
-          path: 'supplementArray.supplementCategory',
-          select: '-description -createdAt -updatedAt',
-        },
-        {
-          path: 'supplementArray.supplements.supplement',
-          select: '-description -createdAt -updatedAt',
-        },
-        {
-          path: 'subCategory',
-          populate: [
-            {
-              path: 'category',
-              populate: [
-                { path: 'menu', select: '-description -createdAt -updatedAt' },
-              ],
-              select: '-description -createdAt -updatedAt',
-            },
-          ],
-          select: '-description -createdAt -updatedAt',
-        },
         {
           path: 'category',
-          populate: [
-            { path: 'menu', select: '-description -createdAt -updatedAt' },
-          ],
-          select: '-description -createdAt -updatedAt',
+          select: '-createdAt -updatedAt',
+        },
+        {
+          path: 'supplements.supplement',
+          select: '-createdAt -updatedAt',
         },
       ],
       select: '-createdAt -updatedAt',
     },
     {
-      path: 'items.selectedSupplements',
-      populate: [
-        {
-          path: 'supplementCategory',
-          select: '-description -createdAt -updatedAt',
-        },
-        {
-          path: 'supplements.supplement',
-          select: '-description -createdAt -updatedAt',
-        },
-      ],
+      path: 'items.supplements',
+      select: '-createdAt -updatedAt',
     },
   ]);
 

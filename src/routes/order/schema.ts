@@ -1,6 +1,10 @@
 import Joi from '@hapi/joi';
 import { JoiObjectId } from '../../helpers/utils/validator';
-import { DeliveryType, OrderStatus } from '../../database/model/Order';
+import {
+  DeliveryType,
+  OrderStatus,
+  PaymentStatus,
+} from '../../database/model/Order';
 
 export default {
   param: Joi.object().keys({
@@ -18,14 +22,16 @@ export default {
   }),
 
   update: Joi.object().keys({
-    deliveryGuyId: Joi.alternatives().try(JoiObjectId(), Joi.allow(null)),
-    deliveryGuyacceptance: Joi.boolean(),
+    paymentStatus: Joi.string().valid(
+      PaymentStatus.PAID,
+      PaymentStatus.UNPAID,
+      PaymentStatus.REFUNDED
+    ),
+
     status: Joi.string().valid(
-      OrderStatus.ACCEPTED,
+      OrderStatus.PENDING,
       OrderStatus.DELIVERED,
-      OrderStatus.DELIVERING,
-      OrderStatus.PREPARING,
-      OrderStatus.PREPARED
+      OrderStatus.SHIPPED
     ),
   }),
 };
