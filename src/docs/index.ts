@@ -6,9 +6,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Chichkhan API',
+      title: 'Milagro API',
       version: '1.0.0',
-      description: 'Chichkhan backend API routes',
+      description: 'Milagro backend API routes',
     },
     servers: [
       {
