@@ -14,35 +14,35 @@ router.use('/', authentication);
 router
   .route('/')
   .post(
-    assignAction({ action: ACTIONS.create, entity: 'Role' }),
-    authorization,
+    // assignAction({ action: ACTIONS.create, entity: 'Role' }),
+    // authorization,
     validator(schema.create),
     roleController.create
   )
   .get(
-    assignAction({ action: ACTIONS.list, entity: 'Role' }),
-    authorization,
+    // assignAction({ action: ACTIONS.list, entity: 'Role' }),
+    // authorization,
     roleController.getAll
   );
 
 router
   .route('/:id')
   .get(
-    assignAction({ action: ACTIONS.read, entity: 'Role' }),
-    authorization,
+    // assignAction({ action: ACTIONS.read, entity: 'Role' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     roleController.getOne
   )
   .put(
-    assignAction({ action: ACTIONS.update, entity: 'Role' }),
-    authorization,
+    // assignAction({ action: ACTIONS.update, entity: 'Role' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     roleController.update
   )
   .delete(
-    assignAction({ action: ACTIONS.delete, entity: 'Role' }),
-    authorization,
+    // assignAction({ action: ACTIONS.delete, entity: 'Role' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     roleController.remove
   );

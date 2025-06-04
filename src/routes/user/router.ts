@@ -17,15 +17,15 @@ router.use('/', authentication);
 router
   .route('/')
   .post(
-    assignAction({ action: ACTIONS.create, entity: 'User' }),
-    authorization,
+    // assignAction({ action: ACTIONS.create, entity: 'User' }),
+    // authorization,
     fileUploadHandler.handleSingleFileUpload('avatar'),
     validator(schema.create),
     userController.create
   )
   .get(
-    assignAction({ action: ACTIONS.list, entity: 'User' }),
-    authorization,
+    // assignAction({ action: ACTIONS.list, entity: 'User' }),
+    // authorization,
     userController.getAll
   );
 
@@ -42,22 +42,22 @@ router
 router
   .route('/:id')
   .get(
-    assignAction({ action: ACTIONS.read, entity: 'User' }),
-    authorization,
+    // assignAction({ action: ACTIONS.read, entity: 'User' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     userController.getOne
   )
   .put(
-    assignAction({ action: ACTIONS.update, entity: 'User' }),
-    authorization,
+    // assignAction({ action: ACTIONS.update, entity: 'User' }),
+    // authorization,
     fileUploadHandler.handleSingleFileUpload('avatar'),
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     userController.update
   )
   .delete(
-    assignAction({ action: ACTIONS.delete, entity: 'User' }),
-    authorization,
+    // assignAction({ action: ACTIONS.delete, entity: 'User' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     userController.remove
   );

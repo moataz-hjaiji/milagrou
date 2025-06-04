@@ -11,21 +11,17 @@ const router = express.Router();
 
 router.use('/', authentication);
 
-router
-  .route('/')
-  .get(
-    assignAction({ action: ACTIONS.list, entity: 'Permission' }),
-    authorization,
-    permissionController.getAll
-  );
+router.route('/').get(
+  // assignAction({ action: ACTIONS.list, entity: 'Permission' }),
+  // authorization,
+  permissionController.getAll
+);
 
-router
-  .route('/:id')
-  .get(
-    assignAction({ action: ACTIONS.read, entity: 'Permission' }),
-    authorization,
-    validator(schema.param, ValidationSource.PARAM),
-    permissionController.getOne
-  );
+router.route('/:id').get(
+  // assignAction({ action: ACTIONS.read, entity: 'Permission' }),
+  // authorization,
+  validator(schema.param, ValidationSource.PARAM),
+  permissionController.getOne
+);
 
 export default router;

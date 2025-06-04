@@ -16,8 +16,8 @@ router
   .route('/')
   .post(
     authentication,
-    assignAction({ action: ACTIONS.create, entity: 'Product' }),
-    authorization,
+    // assignAction({ action: ACTIONS.create, entity: 'Product' }),
+    // authorization,
     fileUploadHandler.handleCustomFileUpload([
       { name: 'images' },
       { name: 'coverImage' },
@@ -43,8 +43,8 @@ router
   )
   .put(
     authentication,
-    assignAction({ action: ACTIONS.update, entity: 'Product' }),
-    authorization,
+    // assignAction({ action: ACTIONS.update, entity: 'Product' }),
+    // authorization,
     fileUploadHandler.handleCustomFileUpload([
       { name: 'images' },
       { name: 'coverImage' },
@@ -55,8 +55,8 @@ router
   )
   .delete(
     authentication,
-    assignAction({ action: ACTIONS.delete, entity: 'Product' }),
-    authorization,
+    // assignAction({ action: ACTIONS.delete, entity: 'Product' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     productController.remove
   );

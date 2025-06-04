@@ -14,35 +14,35 @@ router.use('/', authentication);
 router
   .route('/')
   .post(
-    assignAction({ action: ACTIONS.create, entity: 'Area' }),
-    authorization,
+    // assignAction({ action: ACTIONS.create, entity: 'Area' }),
+    // authorization,
     validator(schema.create),
     areaController.create
   )
   .get(
-    assignAction({ action: ACTIONS.list, entity: 'Area' }),
-    authorization,
+    // assignAction({ action: ACTIONS.list, entity: 'Area' }),
+    // authorization,
     areaController.getAll
   );
 
 router
   .route('/:id')
   .get(
-    assignAction({ action: ACTIONS.read, entity: 'Area' }),
-    authorization,
+    // assignAction({ action: ACTIONS.read, entity: 'Area' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     areaController.getOne
   )
   .put(
-    assignAction({ action: ACTIONS.update, entity: 'Area' }),
-    authorization,
+    // assignAction({ action: ACTIONS.update, entity: 'Area' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     areaController.update
   )
   .delete(
-    assignAction({ action: ACTIONS.delete, entity: 'Area' }),
-    authorization,
+    // assignAction({ action: ACTIONS.delete, entity: 'Area' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     areaController.remove
   );

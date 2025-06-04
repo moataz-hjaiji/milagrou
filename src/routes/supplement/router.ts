@@ -16,8 +16,8 @@ router
   .route('/')
   .post(
     authentication,
-    assignAction({ action: ACTIONS.create, entity: 'Supplement' }),
-    authorization,
+    // assignAction({ action: ACTIONS.create, entity: 'Supplement' }),
+    // authorization,
     fileUploadHandler.handleSingleFileUpload('image'),
     validator(schema.create),
     supplementController.create
@@ -32,8 +32,8 @@ router
   )
   .put(
     authentication,
-    assignAction({ action: ACTIONS.update, entity: 'Supplement' }),
-    authorization,
+    // assignAction({ action: ACTIONS.update, entity: 'Supplement' }),
+    // authorization,
     fileUploadHandler.handleSingleFileUpload('image'),
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
@@ -41,8 +41,8 @@ router
   )
   .delete(
     authentication,
-    assignAction({ action: ACTIONS.delete, entity: 'Supplement' }),
-    authorization,
+    // assignAction({ action: ACTIONS.delete, entity: 'Supplement' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     supplementController.remove
   );

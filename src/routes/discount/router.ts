@@ -14,35 +14,35 @@ router.use('/', authentication);
 router
   .route('/')
   .post(
-    assignAction({ action: ACTIONS.create, entity: 'Discount' }),
-    authorization,
+    // assignAction({ action: ACTIONS.create, entity: 'Discount' }),
+    // authorization,
     validator(schema.create),
     discountController.create
   )
   .get(
-    assignAction({ action: ACTIONS.list, entity: 'Discount' }),
-    authorization,
+    // assignAction({ action: ACTIONS.list, entity: 'Discount' }),
+    // authorization,
     discountController.getAll
   );
 
 router
   .route('/:id')
   .get(
-    assignAction({ action: ACTIONS.read, entity: 'Discount' }),
-    authorization,
+    // assignAction({ action: ACTIONS.read, entity: 'Discount' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     discountController.getOne
   )
   .put(
-    assignAction({ action: ACTIONS.update, entity: 'Discount' }),
-    authorization,
+    // assignAction({ action: ACTIONS.update, entity: 'Discount' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     discountController.update
   )
   .delete(
-    assignAction({ action: ACTIONS.delete, entity: 'Discount' }),
-    authorization,
+    // assignAction({ action: ACTIONS.delete, entity: 'Discount' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     discountController.remove
   );

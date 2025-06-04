@@ -13,8 +13,8 @@ router
   .route('/')
   .post(
     authentication,
-    assignAction({ action: ACTIONS.create, entity: 'Category' }),
-    authorization,
+    // assignAction({ action: ACTIONS.create, entity: 'Category' }),
+    // authorization,
     validator(schema.create),
     categoryController.create
   )
@@ -28,16 +28,16 @@ router
   )
   .put(
     authentication,
-    assignAction({ action: ACTIONS.update, entity: 'Category' }),
-    authorization,
+    // assignAction({ action: ACTIONS.update, entity: 'Category' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     categoryController.update
   )
   .delete(
     authentication,
-    assignAction({ action: ACTIONS.delete, entity: 'Category' }),
-    authorization,
+    // assignAction({ action: ACTIONS.delete, entity: 'Category' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     categoryController.remove
   );

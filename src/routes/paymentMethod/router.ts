@@ -13,8 +13,8 @@ router
   .route('/')
   .post(
     authentication,
-    assignAction({ action: ACTIONS.create, entity: 'PaymentMethod' }),
-    authorization,
+    // assignAction({ action: ACTIONS.create, entity: 'PaymentMethod' }),
+    // authorization,
     validator(schema.create),
     paymentMethodController.create
   )
@@ -28,16 +28,16 @@ router
   )
   .put(
     authentication,
-    assignAction({ action: ACTIONS.update, entity: 'PaymentMethod' }),
-    authorization,
+    // assignAction({ action: ACTIONS.update, entity: 'PaymentMethod' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     paymentMethodController.update
   )
   .delete(
     authentication,
-    assignAction({ action: ACTIONS.delete, entity: 'PaymentMethod' }),
-    authorization,
+    // assignAction({ action: ACTIONS.delete, entity: 'PaymentMethod' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     paymentMethodController.remove
   );

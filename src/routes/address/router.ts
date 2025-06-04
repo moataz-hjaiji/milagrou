@@ -14,35 +14,35 @@ router.use('/', authentication);
 router
   .route('/')
   .post(
-    assignAction({ action: ACTIONS.create, entity: 'Address' }),
-    authorization,
+    // assignAction({ action: ACTIONS.create, entity: 'Address' }),
+    // authorization,
     validator(schema.create),
     addressController.create
   )
   .get(
-    assignAction({ action: ACTIONS.list, entity: 'Address' }),
-    authorization,
+    // assignAction({ action: ACTIONS.list, entity: 'Address' }),
+    // authorization,
     addressController.getAll
   );
 
 router
   .route('/:id')
   .get(
-    assignAction({ action: ACTIONS.read, entity: 'Address' }),
-    authorization,
+    // assignAction({ action: ACTIONS.read, entity: 'Address' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     addressController.getOne
   )
   .put(
-    assignAction({ action: ACTIONS.update, entity: 'Address' }),
-    authorization,
+    // assignAction({ action: ACTIONS.update, entity: 'Address' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     addressController.update
   )
   .delete(
-    assignAction({ action: ACTIONS.delete, entity: 'Address' }),
-    authorization,
+    // assignAction({ action: ACTIONS.delete, entity: 'Address' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     addressController.remove
   );

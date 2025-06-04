@@ -11,13 +11,11 @@ const router = express.Router();
 
 router.use('/', authentication);
 
-router
-  .route('/')
-  .get(
-    assignAction({ action: ACTIONS.list, entity: 'Favourite' }),
-    authorization,
-    favouriteController.getAll
-  );
+router.route('/').get(
+  // assignAction({ action: ACTIONS.list, entity: 'Favourite' }),
+  // authorization,
+  favouriteController.getAll
+);
 
 router
   .route('/toggle/:id')
@@ -26,13 +24,11 @@ router
     favouriteController.toggle
   );
 
-router
-  .route('/:id')
-  .get(
-    assignAction({ action: ACTIONS.read, entity: 'Favourite' }),
-    authorization,
-    validator(schema.param, ValidationSource.PARAM),
-    favouriteController.getOne
-  );
+router.route('/:id').get(
+  // assignAction({ action: ACTIONS.read, entity: 'Favourite' }),
+  // authorization,
+  validator(schema.param, ValidationSource.PARAM),
+  favouriteController.getOne
+);
 
 export default router;

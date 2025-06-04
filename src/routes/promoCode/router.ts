@@ -14,14 +14,14 @@ router.use('/', authentication);
 router
   .route('/')
   .post(
-    assignAction({ action: ACTIONS.create, entity: 'PromoCode' }),
-    authorization,
+    // assignAction({ action: ACTIONS.create, entity: 'PromoCode' }),
+    // authorization,
     validator(schema.create),
     promoCodeController.create
   )
   .get(
-    assignAction({ action: ACTIONS.list, entity: 'PromoCode' }),
-    authorization,
+    // assignAction({ action: ACTIONS.list, entity: 'PromoCode' }),
+    // authorization,
     promoCodeController.getAll
   );
 
@@ -32,21 +32,21 @@ router
 router
   .route('/:id')
   .get(
-    assignAction({ action: ACTIONS.read, entity: 'PromoCode' }),
-    authorization,
+    // assignAction({ action: ACTIONS.read, entity: 'PromoCode' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     promoCodeController.getOne
   )
   .put(
-    assignAction({ action: ACTIONS.update, entity: 'PromoCode' }),
-    authorization,
+    // assignAction({ action: ACTIONS.update, entity: 'PromoCode' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     promoCodeController.update
   )
   .delete(
-    assignAction({ action: ACTIONS.delete, entity: 'PromoCode' }),
-    authorization,
+    // assignAction({ action: ACTIONS.delete, entity: 'PromoCode' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     promoCodeController.remove
   );

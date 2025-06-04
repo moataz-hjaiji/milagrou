@@ -14,36 +14,36 @@ router.use('/', authentication);
 router
   .route('/')
   .post(
-    assignAction({ action: ACTIONS.create, entity: 'Rating' }),
-    authorization,
+    // assignAction({ action: ACTIONS.create, entity: 'Rating' }),
+    // authorization,
     validator(schema.create),
     ratingController.create
   )
   .get(
-    assignAction({ action: ACTIONS.list, entity: 'Rating' }),
-    authorization,
+    // assignAction({ action: ACTIONS.list, entity: 'Rating' }),
+    // authorization,
     ratingController.getAll
   );
 
 router
   .route('/:id')
   .get(
-    assignAction({ action: ACTIONS.read, entity: 'Rating' }),
-    authorization,
+    // assignAction({ action: ACTIONS.read, entity: 'Rating' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     ratingController.getOne
   )
   .put(
     authentication,
-    assignAction({ action: ACTIONS.update, entity: 'Rating' }),
-    authorization,
+    // assignAction({ action: ACTIONS.update, entity: 'Rating' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     ratingController.update
   )
   .delete(
-    assignAction({ action: ACTIONS.delete, entity: 'Rating' }),
-    authorization,
+    // assignAction({ action: ACTIONS.delete, entity: 'Rating' }),
+    // authorization,
     validator(schema.param, ValidationSource.PARAM),
     ratingController.remove
   );
