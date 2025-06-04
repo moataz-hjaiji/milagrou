@@ -11,6 +11,8 @@ import DeliveryPriceRepo from '../../database/repository/DeliveryPriceRepo';
 interface checkoutParams {
   userId: ObjectId;
   deliveryType: string;
+  orderType: string;
+  reservationDate?: Date;
   paymentMethodId: string;
   addressId?: string;
   code?: string;
@@ -19,6 +21,8 @@ interface checkoutParams {
 export const checkout = async ({
   userId,
   deliveryType,
+  orderType,
+  reservationDate,
   paymentMethodId,
   addressId,
   code,
@@ -115,6 +119,7 @@ export const checkout = async ({
   const order = await OrderRepo.create({
     userId,
     deliveryType,
+    orderType,
     paymentMethodId,
     addressId,
     orderPrice,
@@ -122,6 +127,7 @@ export const checkout = async ({
     newId,
     promoCodeId: promoCode?._id,
     items,
+    reservationDate,
   } as any);
 
   if (promoCode) {

@@ -3,6 +3,7 @@ import { JoiObjectId } from '../../helpers/utils/validator';
 import {
   DeliveryType,
   OrderStatus,
+  OrderType,
   PaymentStatus,
 } from '../../database/model/Order';
 
@@ -12,13 +13,16 @@ export default {
   }),
 
   checkout: Joi.object().keys({
-    deliveryType: Joi.string().valid(
-      DeliveryType.DELIVERY,
-      DeliveryType.PICKUP
-    ),
+    deliveryType: Joi.string()
+      .valid(DeliveryType.DELIVERY, DeliveryType.PICKUP)
+      .required(),
+    orderType: Joi.string()
+      .valid(OrderType.GIFT, OrderType.RESERVATION, OrderType.NORMAL)
+      .required(),
     paymentMethodId: JoiObjectId().required(),
     addressId: JoiObjectId(),
     code: Joi.string(),
+    reservationDate: Joi.date(),
   }),
 
   update: Joi.object().keys({

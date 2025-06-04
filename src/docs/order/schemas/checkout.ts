@@ -6,6 +6,7 @@
  *       type: object
  *       required:
  *         - deliveryType
+ *         - orderType
  *         - paymentMethodId
  *       properties:
  *         deliveryType:
@@ -13,6 +14,12 @@
  *           enum:
  *             - DELIVERY
  *             - PICKUP
+ *         orderType:
+ *           type: string
+ *           enum:
+ *             - GIFT
+ *             - NORMAL
+ *             - RESERVATION
  *         code:
  *           type: string
  *         paymentMethodId:

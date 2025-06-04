@@ -4,20 +4,17 @@
  *   schemas:
  *     UpdateOrder:
  *       type: object
- *       required:
- *         - status
  *       properties:
  *         status:
  *           type: string
  *           enum:
- *             - ACCEPTED
- *             - PREPARING
- *             - PREPARED
- *             - DELIVERING
+ *             - PENDING
+ *             - SHIPPED
  *             - DELIVERED
- *         deliveryGuyId:
+ *         paymentStatus:
  *           type: string
- *           format: uuid
- *         deliveryGuyacceptance:
- *           type: boolean
+ *           enum:
+ *             - UNPAID
+ *             - PAID
+ *             - REFUNDED
  */

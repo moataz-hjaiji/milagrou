@@ -11,11 +11,20 @@ import {
 
 export const checkout = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
-    const { deliveryType, paymentMethodId, addressId, code } = req.body;
+    const {
+      deliveryType,
+      orderType,
+      reservationDate,
+      paymentMethodId,
+      addressId,
+      code,
+    } = req.body;
     const userId = req.user._id;
     const result = await orderService.checkout({
       userId,
       deliveryType,
+      orderType,
+      reservationDate,
       paymentMethodId,
       addressId,
       code,
