@@ -17,7 +17,7 @@ const findAll = async (
   const features = new APIFeatures(findAllQuery, query)
     .filter()
     .sort()
-    .recherche(['nameAr', 'nameAr'])
+    .recherche(['nameAng', 'nameAr'])
     .limitFields()
     .populate();
 
