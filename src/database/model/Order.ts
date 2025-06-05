@@ -90,7 +90,7 @@ const schema = new Schema<IOrder>(
           descriptionAng: { type: String },
           descriptionAr: { type: String },
           price: { type: Number },
-          images: [{ type: Number }],
+          images: [{ type: String }],
         },
         supplements: [
           {
