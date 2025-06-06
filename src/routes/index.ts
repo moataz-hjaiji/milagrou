@@ -18,6 +18,7 @@ import areas from './area/router';
 import stores from './store/router';
 import deliveryPrices from './deliveryPrice/router';
 import supplements from './supplement/router';
+import popups from './popup/router';
 
 const router = express.Router();
 
@@ -40,5 +41,6 @@ router.use('/areas', areas);
 router.use('/stores', stores);
 router.use('/delivery-prices', deliveryPrices);
 router.use('/supplements', supplements);
+router.use('/popups', popups);
 
 export default router;

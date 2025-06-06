@@ -9,12 +9,10 @@ export default {
 
   create: Joi.object().keys({
     target: Joi.object({
-      menuId: JoiObjectId(),
       categoryId: JoiObjectId(),
-      subCategoryId: JoiObjectId(),
       productId: JoiObjectId(),
     })
-      .or('menuId', 'categoryId', 'subCategoryId', 'productId')
+      .or('categoryId', 'productId')
       .required(),
     startDate: Joi.date().required(),
     endDate: Joi.date().min(Joi.ref('startDate')).required(),
