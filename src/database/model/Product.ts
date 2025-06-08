@@ -23,6 +23,7 @@ export default interface IProduct extends Document {
   nameAr: string;
   descriptionAng: string;
   descriptionAr: string;
+  isRecommended: boolean;
   images: string[];
   coverImage: string;
   price: number;
@@ -48,6 +49,10 @@ const schema = new Schema<IProduct>(
     descriptionAr: {
       type: Schema.Types.String,
       trim: true,
+    },
+    isRecommended: {
+      type: Schema.Types.Boolean,
+      default: false,
     },
     images: [
       {

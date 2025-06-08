@@ -11,6 +11,7 @@
  *         - descriptionAr
  *         - price
  *         - category
+ *         - isRecommended
  *       properties:
  *         nameAng:
  *           type: string
@@ -20,6 +21,8 @@
  *           type: string
  *         descriptionAr:
  *           type: string
+ *         isRecommended:
+ *           type: boolean
  *         price:
  *           type: number
  *         position:

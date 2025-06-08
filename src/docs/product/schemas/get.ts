@@ -13,6 +13,8 @@
  *           type: string
  *         descriptionAr:
  *           type: string
+ *         isRecommended:
+ *           type: boolean
  *         price:
  *           type: number
  *         images:
