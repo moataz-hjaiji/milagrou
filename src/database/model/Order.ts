@@ -3,10 +3,8 @@ import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
 import IAddress, { ADDRESS_DOCUMENT_NAME } from './Address';
 import IPaymentMethod, { PAYMENT_METHOD_DOCUMENT_NAME } from './PaymentMethod';
-import IProduct, { PRODUCT_DOCUMENT_NAME } from './Product';
 import IUser, { USER_DOCUMENT_NAME } from './User';
 import IPromoCode, { PROMO_CODE_DOCUMENT_NAME } from './PromoCode';
-import ISupplement, { SUPPLEMENT_DOCUMENT_NAME } from './Supplement';
 
 export const ORDER_DOCUMENT_NAME = 'Order';
 const ORDER_COLLECTION_NAME = 'Orders';
@@ -15,6 +13,7 @@ export const enum OrderStatus {
   PENDING = 'PENDING',
   SHIPPED = 'SHIPPED',
   DELIVERED = 'DELIVERED',
+  COMPLETED = 'COMPLETED',
 }
 
 export const enum PaymentStatus {
@@ -36,6 +35,7 @@ export const enum DeliveryType {
 
 export default interface IOrder extends Document {
   userId: IUser | ObjectId;
+  browserId: string;
   deliveryType: DeliveryType;
   paymentStatus: PaymentStatus;
   orderType: OrderType;
@@ -56,6 +56,9 @@ const schema = new Schema<IOrder>(
     userId: {
       type: Schema.Types.ObjectId,
       ref: () => USER_DOCUMENT_NAME,
+    },
+    browserId: {
+      type: Schema.Types.String,
     },
     deliveryType: {
       type: Schema.Types.String,
@@ -131,8 +134,6 @@ const schema = new Schema<IOrder>(
     versionKey: false,
   }
 );
-
-schema.index({ location: '2dsphere' });
 
 preFindHook(schema);
 schema.plugin(mongoosePagination);

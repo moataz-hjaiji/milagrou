@@ -1,6 +1,5 @@
 import UserRepo from '../../database/repository/UserRepo';
-import { BadRequestError, NotFoundError } from '../../core/ApiError';
-import RoleRepo from '../../database/repository/RoleRepo';
+import { BadRequestError } from '../../core/ApiError';
 
 interface verifyCodeParams {
   phoneNumber: string;

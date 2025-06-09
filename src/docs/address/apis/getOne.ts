@@ -3,8 +3,6 @@
  * /addresses/{id}:
  *    get:
  *      summary: Get one Address by id
- *      security:
- *        - bearerAuth: []
  *      parameters:
  *        - in: path
  *          name: id

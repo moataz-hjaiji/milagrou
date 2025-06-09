@@ -1,575 +1,664 @@
-// // authProviders.ts - Core data retrieval functions
+// authProviders.ts - Type-safe authentication provider implementations
 
-// import { OAuth2Client } from 'google-auth-library';
-// import jwt from 'jsonwebtoken';
-// import jwksClient from 'jwks-rsa';
-// import twilio from 'twilio';
+import { OAuth2Client, TokenPayload } from 'google-auth-library';
+import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwksClient from 'jwks-rsa';
+import twilio from 'twilio';
 
-// // Type definitions
-// interface GoogleUserData {
-//   provider: 'google';
-//   providerId: string;
-//   email: string;
-//   emailVerified: boolean;
-//   name: string;
-//   firstName: string;
-//   lastName: string;
-//   avatar: string;
-//   locale: string;
-//   raw: any;
-// }
+// Type definitions
+interface GoogleUserData {
+  provider: 'google';
+  providerId: string;
+  email: string;
+  emailVerified: boolean;
+  name: string;
+  firstName: string;
+  lastName: string;
+  avatar: string;
+  locale: string;
+  raw: TokenPayload;
+}
 
-// interface AppleUserData {
-//   provider: 'apple';
-//   providerId: string;
-//   email: string | null;
-//   emailVerified: boolean;
-//   name: string | null;
-//   firstName: string | null;
-//   lastName: string | null;
-//   avatar: string | null;
-//   isPrivateEmail: boolean;
-//   raw: any;
-// }
+interface AppleUserData {
+  provider: 'apple';
+  providerId: string;
+  email: string | null;
+  emailVerified: boolean;
+  name: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  avatar: string | null;
+  isPrivateEmail: boolean;
+  raw: AppleJWTPayload;
+}
 
-// interface WhatsAppUserData {
-//   provider: 'whatsapp';
-//   providerId: string;
-//   phone: string;
-//   phoneVerified: boolean;
-//   email: string | null;
-//   name: string | null;
-//   firstName: string | null;
-//   lastName: string | null;
-//   avatar: string | null;
-//   verificationSid: string;
-//   raw: any;
-// }
+interface WhatsAppUserData {
+  provider: 'whatsapp';
+  providerId: string;
+  phone: string;
+  phoneVerified: boolean;
+  email: string | null;
+  name: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  avatar: string | null;
+  verificationSid: string;
+  raw: any;
+}
 
-// interface NormalizedUserData {
-//   provider: string;
-//   providerId: string;
-//   email: string | null;
-//   phone: string | null;
-//   name: string;
-//   firstName: string | null;
-//   lastName: string | null;
-//   avatar: string | null;
-//   emailVerified: boolean;
-//   phoneVerified: boolean;
-//   metadata: any;
-//   locale?: string;
-//   isPrivateEmail?: boolean;
-//   verificationSid?: string;
-// }
+interface NormalizedUserData {
+  provider: string;
+  providerId: string;
+  email: string | null;
+  phone: string | null;
+  name: string;
+  firstName: string | null;
+  lastName: string | null;
+  avatar: string | null;
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  metadata: Record<string, unknown>;
+  locale?: string;
+  isPrivateEmail?: boolean;
+  verificationSid?: string;
+}
 
-// interface AuthProviderConfig {
-//   google: {
-//     clientId: string;
-//   };
-//   whatsapp: {
-//     accountSid: string;
-//     authToken: string;
-//     verifyServiceSid: string;
-//   };
-// }
+interface AuthProviderConfig {
+  google: {
+    clientId: string;
+  };
+  whatsapp: {
+    accountSid: string;
+    authToken: string;
+    verifyServiceSid: string;
+  };
+}
 
-// interface GoogleCredentials {
-//   idToken?: string;
-//   accessToken?: string;
-// }
+interface GoogleCredentials {
+  idToken?: string;
+  accessToken?: string;
+}
 
-// interface AppleCredentials {
-//   idToken: string;
-//   clientId: string;
-// }
+interface AppleCredentials {
+  idToken: string;
+  clientId: string;
+}
 
-// interface WhatsAppCredentials {
-//   phoneNumber: string;
-//   code: string;
-// }
+interface WhatsAppCredentials {
+  phoneNumber: string;
+  code: string;
+}
 
-// // Google Auth Data Retrieval
-// class GoogleAuthProvider {
-//   private client: OAuth2Client;
+// Apple JWT payload interface
+interface AppleJWTPayload extends JwtPayload {
+  sub: string;
+  email?: string;
+  email_verified?: string;
+  is_private_email?: string;
+}
 
-//   constructor(clientId: string) {
-//     this.client = new OAuth2Client(clientId);
-//   }
+// Apple user name interface
+interface AppleUserName {
+  firstName?: string;
+  lastName?: string;
+}
 
-//   // Verify Google ID token and extract user data
-//   async verifyGoogleToken(idToken: string): Promise<GoogleUserData> {
-//     try {
-//       const ticket = await this.client.verifyIdToken({
-//         idToken: idToken,
-//         audience: process.env.GOOGLE_CLIENT_ID as string,
-//       });
+interface AppleUserInfo {
+  name?: AppleUserName;
+}
 
-//       const payload = ticket.getPayload();
+// Google API response interface
+interface GoogleAPIUserData {
+  id: string;
+  email: string;
+  verified_email: boolean;
+  name: string;
+  given_name: string;
+  family_name: string;
+  picture: string;
+  locale: string;
+}
 
-//       return {
-//         provider: 'google',
-//         providerId: payload.sub,
-//         email: payload.email,
-//         emailVerified: payload.email_verified,
-//         name: payload.name,
-//         firstName: payload.given_name,
-//         lastName: payload.family_name,
-//         avatar: payload.picture,
-//         locale: payload.locale,
-//         raw: payload,
-//       };
-//     } catch (error) {
-//       throw new Error(`Google token verification failed: ${error.message}`);
-//     }
-//   }
+// WhatsApp verification response
+interface WhatsAppVerificationResponse {
+  success: boolean;
+  sid: string;
+  status: string;
+  to: string;
+  channel: string;
+}
 
-//   // Get user data using access token
-//   async getUserDataFromAccessToken(
-//     accessToken: string
-//   ): Promise<GoogleUserData> {
-//     try {
-//       const response = await fetch(
-//         `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`
-//       );
+// Google Auth Data Retrieval
+class GoogleAuthProvider {
+  private client: OAuth2Client;
 
-//       if (!response.ok) {
-//         throw new Error(`Google API error: ${response.status}`);
-//       }
+  constructor(clientId: string) {
+    this.client = new OAuth2Client(clientId);
+  }
 
-//       const userData = await response.json();
+  // Verify Google ID token and extract user data
+  async verifyGoogleToken(idToken: string): Promise<GoogleUserData> {
+    try {
+      const ticket = await this.client.verifyIdToken({
+        idToken: idToken,
+        audience: process.env.GOOGLE_CLIENT_ID as string,
+      });
 
-//       return {
-//         provider: 'google',
-//         providerId: userData.id,
-//         email: userData.email,
-//         emailVerified: userData.verified_email,
-//         name: userData.name,
-//         firstName: userData.given_name,
-//         lastName: userData.family_name,
-//         avatar: userData.picture,
-//         locale: userData.locale,
-//         raw: userData,
-//       };
-//     } catch (error) {
-//       throw new Error(`Failed to fetch Google user data: ${error.message}`);
-//     }
-//   }
-// }
+      const payload = ticket.getPayload();
 
-// // Apple Auth Data Retrieval
-// class AppleAuthProvider {
-//   private jwksClient: jwksClient.JwksClient;
+      if (!payload) {
+        throw new Error('No payload in Google token');
+      }
 
-//   constructor() {
-//     this.jwksClient = jwksClient({
-//       jwksUri: 'https://appleid.apple.com/auth/keys',
-//       cache: true,
-//       cacheMaxEntries: 5,
-//       cacheMaxAge: 600000, // 10 minutes
-//     });
-//   }
+      if (!payload.sub || !payload.email || !payload.name) {
+        throw new Error('Missing required fields in Google token payload');
+      }
 
-//   // Get Apple's public key for token verification
-//   async getApplePublicKey(kid: string): Promise<string> {
-//     return new Promise((resolve, reject) => {
-//       this.jwksClient.getSigningKey(kid, (err, key) => {
-//         if (err) {
-//           reject(err);
-//         } else {
-//           resolve(key.getPublicKey());
-//         }
-//       });
-//     });
-//   }
+      return {
+        provider: 'google',
+        providerId: payload.sub,
+        email: payload.email,
+        emailVerified: payload.email_verified ?? false,
+        name: payload.name,
+        firstName: payload.given_name ?? '',
+        lastName: payload.family_name ?? '',
+        avatar: payload.picture ?? '',
+        locale: payload.locale ?? '',
+        raw: payload,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Google token verification failed: ${errorMessage}`);
+    }
+  }
 
-//   // Verify Apple ID token and extract user data
-//   async verifyAppleToken(
-//     idToken: string,
-//     clientId: string
-//   ): Promise<AppleUserData> {
-//     try {
-//       // Decode token header to get key ID
-//       const decoded = jwt.decode(idToken, { complete: true });
-//       if (!decoded) {
-//         throw new Error('Invalid Apple ID token');
-//       }
+  // Get user data using access token
+  async getUserDataFromAccessToken(
+    accessToken: string
+  ): Promise<GoogleUserData> {
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`
+      );
 
-//       const { kid } = decoded.header;
-//       const publicKey = await this.getApplePublicKey(kid);
+      if (!response.ok) {
+        throw new Error(`Google API error: ${response.status}`);
+      }
 
-//       // Verify token
-//       const payload = jwt.verify(idToken, publicKey, {
-//         algorithms: ['RS256'],
-//         audience: clientId,
-//         issuer: 'https://appleid.apple.com',
-//       });
+      const userData: GoogleAPIUserData = await response.json();
 
-//       return {
-//         provider: 'apple',
-//         providerId: payload.sub,
-//         email: payload.email,
-//         emailVerified: payload.email_verified === 'true',
-//         name: null, // Apple doesn't provide name in JWT, only during first auth
-//         firstName: null,
-//         lastName: null,
-//         avatar: null,
-//         isPrivateEmail: payload.is_private_email === 'true',
-//         raw: payload,
-//       };
-//     } catch (error) {
-//       throw new Error(`Apple token verification failed: ${error.message}`);
-//     }
-//   }
+      if (!userData.id || !userData.email || !userData.name) {
+        throw new Error('Missing required fields in Google API response');
+      }
 
-//   // Parse Apple user data from form submission (first-time auth)
-//   parseAppleUserData(
-//     identityToken: string,
-//     user?: string | any
-//   ): AppleUserData {
-//     try {
-//       const tokenData = await this.verifyAppleToken(
-//         identityToken,
-//         process.env.APPLE_CLIENT_ID as string
-//       );
+      // Create a minimal TokenPayload for consistency
+      const tokenPayload: any = {
+        sub: userData.id,
+        email: userData.email,
+        name: userData.name,
+        given_name: userData.given_name,
+        family_name: userData.family_name,
+        picture: userData.picture,
+        locale: userData.locale,
+        email_verified: userData.verified_email,
+      };
 
-//       // User data is only provided on first authorization
-//       let userData = {
-//         provider: 'apple',
-//         providerId: tokenData.providerId,
-//         email: tokenData.email,
-//         emailVerified: tokenData.emailVerified,
-//         name: null,
-//         firstName: null,
-//         lastName: null,
-//         avatar: null,
-//         isPrivateEmail: tokenData.isPrivateEmail,
-//         raw: { ...tokenData.raw },
-//       };
+      return {
+        provider: 'google',
+        providerId: userData.id,
+        email: userData.email,
+        emailVerified: userData.verified_email,
+        name: userData.name,
+        firstName: userData.given_name,
+        lastName: userData.family_name,
+        avatar: userData.picture,
+        locale: userData.locale,
+        raw: tokenPayload,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to fetch Google user data: ${errorMessage}`);
+    }
+  }
+}
 
-//       // Parse user name if provided (only on first auth)
-//       if (user) {
-//         const userObj = typeof user === 'string' ? JSON.parse(user) : user;
-//         if (userObj.name) {
-//           userData.firstName = userObj.name.firstName;
-//           userData.lastName = userObj.name.lastName;
-//           userData.name =
-//             `${userObj.name.firstName || ''} ${userObj.name.lastName || ''}`.trim();
-//         }
-//       }
+// Apple Auth Data Retrieval
+class AppleAuthProvider {
+  private jwksClient: jwksClient.JwksClient;
 
-//       return userData;
-//     } catch (error) {
-//       throw new Error(`Failed to parse Apple user data: ${error.message}`);
-//     }
-//   }
-// }
+  constructor() {
+    this.jwksClient = jwksClient({
+      jwksUri: 'https://appleid.apple.com/auth/keys',
+      cache: true,
+      cacheMaxEntries: 5,
+      cacheMaxAge: 600000, // 10 minutes
+    });
+  }
 
-// // WhatsApp Auth Data Retrieval
-// class WhatsAppAuthProvider {
-//   private client: twilio.Twilio;
-//   private verifyServiceSid: string;
+  // Get Apple's public key for token verification
+  async getApplePublicKey(kid: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.jwksClient.getSigningKey(kid, (err, key) => {
+        if (err) {
+          reject(err);
+        } else if (!key) {
+          reject(new Error('No key found'));
+        } else {
+          resolve(key.getPublicKey());
+        }
+      });
+    });
+  }
 
-//   constructor(accountSid: string, authToken: string, verifyServiceSid: string) {
-//     this.client = twilio(accountSid, authToken);
-//     this.verifyServiceSid = verifyServiceSid;
-//   }
+  // Verify Apple ID token and extract user data
+  async verifyAppleToken(
+    idToken: string,
+    clientId: string
+  ): Promise<AppleUserData> {
+    try {
+      // Decode token header to get key ID
+      const decoded = jwt.decode(idToken, { complete: true });
+      if (!decoded || typeof decoded === 'string') {
+        throw new Error('Invalid Apple ID token');
+      }
 
-//   // Send verification code via WhatsApp
-//   async sendVerificationCode(phoneNumber: string) {
-//     try {
-//       const verification = await this.client.verify.v2
-//         .services(this.verifyServiceSid)
-//         .verifications.create({
-//           to: phoneNumber,
-//           channel: 'whatsapp',
-//         });
+      const { kid } = decoded.header;
+      if (!kid) {
+        throw new Error('Missing kid in Apple token header');
+      }
 
-//       return {
-//         success: true,
-//         sid: verification.sid,
-//         status: verification.status,
-//         to: verification.to,
-//         channel: verification.channel,
-//       };
-//     } catch (error) {
-//       throw new Error(`Failed to send WhatsApp verification: ${error.message}`);
-//     }
-//   }
+      const publicKey = await this.getApplePublicKey(kid);
 
-//   // Verify the code and return user data
-//   async verifyCodeAndGetUserData(
-//     phoneNumber: string,
-//     code: string
-//   ): Promise<WhatsAppUserData> {
-//     try {
-//       const verificationCheck = await this.client.verify.v2
-//         .services(this.verifyServiceSid)
-//         .verificationChecks.create({
-//           to: phoneNumber,
-//           code: code,
-//         });
+      // Verify token
+      const payload = jwt.verify(idToken, publicKey, {
+        algorithms: ['RS256'],
+        audience: clientId,
+        issuer: 'https://appleid.apple.com',
+      }) as AppleJWTPayload;
 
-//       if (verificationCheck.status !== 'approved') {
-//         throw new Error('Invalid verification code');
-//       }
+      if (!payload.sub) {
+        throw new Error('Missing sub in Apple token payload');
+      }
 
-//       // Format phone number for consistency
-//       const formattedPhone = this.formatPhoneNumber(phoneNumber);
+      return {
+        provider: 'apple',
+        providerId: payload.sub,
+        email: payload.email || null,
+        emailVerified: payload.email_verified === 'true',
+        name: null, // Apple doesn't provide name in JWT, only during first auth
+        firstName: null,
+        lastName: null,
+        avatar: null,
+        isPrivateEmail: payload.is_private_email === 'true',
+        raw: payload,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Apple token verification failed: ${errorMessage}`);
+    }
+  }
 
-//       return {
-//         provider: 'whatsapp',
-//         providerId: formattedPhone,
-//         phone: formattedPhone,
-//         phoneVerified: true,
-//         email: null,
-//         name: null, // WhatsApp doesn't provide name
-//         firstName: null,
-//         lastName: null,
-//         avatar: null,
-//         verificationSid: verificationCheck.sid,
-//         raw: verificationCheck,
-//       };
-//     } catch (error) {
-//       throw new Error(`WhatsApp verification failed: ${error.message}`);
-//     }
-//   }
+  // Parse Apple user data from form submission (first-time auth)
+  async parseAppleUserData(
+    identityToken: string,
+    user?: string | AppleUserInfo
+  ): Promise<AppleUserData> {
+    try {
+      const tokenData = await this.verifyAppleToken(
+        identityToken,
+        process.env.APPLE_CLIENT_ID as string
+      );
 
-//   // Optional: Get WhatsApp profile info if you have WhatsApp Business API
-//   async getWhatsAppProfile(phoneNumber: string, accessToken: string) {
-//     try {
-//       const response = await fetch(
-//         `https://graph.facebook.com/v18.0/${phoneNumber}`,
-//         {
-//           headers: {
-//             Authorization: `Bearer ${accessToken}`,
-//           },
-//         }
-//       );
+      // User data is only provided on first authorization
+      const userData: AppleUserData = {
+        provider: 'apple',
+        providerId: tokenData.providerId,
+        email: tokenData.email,
+        emailVerified: tokenData.emailVerified,
+        name: null,
+        firstName: null,
+        lastName: null,
+        avatar: null,
+        isPrivateEmail: tokenData.isPrivateEmail,
+        raw: tokenData.raw,
+      };
 
-//       if (!response.ok) {
-//         throw new Error(`WhatsApp API error: ${response.status}`);
-//       }
+      // Parse user name if provided (only on first auth)
+      if (user) {
+        let userObj: AppleUserInfo;
 
-//       const profileData = await response.json();
+        if (typeof user === 'string') {
+          try {
+            userObj = JSON.parse(user) as AppleUserInfo;
+          } catch {
+            throw new Error('Invalid JSON in user parameter');
+          }
+        } else {
+          userObj = user;
+        }
 
-//       return {
-//         provider: 'whatsapp',
-//         providerId: phoneNumber,
-//         phone: phoneNumber,
-//         name: profileData.display_name || null,
-//         avatar: profileData.profile_picture_url || null,
-//         status: profileData.status || null,
-//         raw: profileData,
-//       };
-//     } catch (error) {
-//       throw new Error(`Failed to fetch WhatsApp profile: ${error.message}`);
-//     }
-//   }
+        if (userObj.name) {
+          userData.firstName = userObj.name.firstName || null;
+          userData.lastName = userObj.name.lastName || null;
+          userData.name =
+            `${userObj.name.firstName || ''} ${userObj.name.lastName || ''}`.trim() ||
+            null;
+        }
+      }
 
-//   // Utility function to format phone numbers consistently
-//   formatPhoneNumber(phoneNumber: string): string {
-//     // Remove all non-digit characters except +
-//     let formatted = phoneNumber.replace(/[^\d+]/g, '');
+      return userData;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to parse Apple user data: ${errorMessage}`);
+    }
+  }
+}
 
-//     // Ensure it starts with +
-//     if (!formatted.startsWith('+')) {
-//       formatted = '+' + formatted;
-//     }
+// WhatsApp Auth Data Retrieval
+class WhatsAppAuthProvider {
+  private client: twilio.Twilio;
+  private verifyServiceSid: string;
 
-//     return formatted;
-//   }
-// }
+  constructor(accountSid: string, authToken: string, verifyServiceSid: string) {
+    this.client = twilio(accountSid, authToken);
+    this.verifyServiceSid = verifyServiceSid;
+  }
 
-// // Unified Auth Provider Manager
-// class AuthProviderManager {
-//   private google: GoogleAuthProvider;
-//   private apple: AppleAuthProvider;
-//   private whatsapp: WhatsAppAuthProvider;
+  // Send verification code via WhatsApp
+  async sendVerificationCode(
+    phoneNumber: string
+  ): Promise<WhatsAppVerificationResponse> {
+    try {
+      const verification = await this.client.verify.v2
+        .services(this.verifyServiceSid)
+        .verifications.create({
+          to: phoneNumber,
+          channel: 'whatsapp',
+        });
 
-//   constructor(config: AuthProviderConfig) {
-//     this.google = new GoogleAuthProvider(config.google.clientId);
-//     this.apple = new AppleAuthProvider();
-//     this.whatsapp = new WhatsAppAuthProvider(
-//       config.whatsapp.accountSid,
-//       config.whatsapp.authToken,
-//       config.whatsapp.verifyServiceSid
-//     );
-//   }
+      return {
+        success: true,
+        sid: verification.sid,
+        status: verification.status,
+        to: verification.to,
+        channel: verification.channel,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to send WhatsApp verification: ${errorMessage}`);
+    }
+  }
 
-//   // Normalize user data from any provider
-//   normalizeUserData(
-//     providerData: GoogleUserData | AppleUserData | WhatsAppUserData
-//   ): NormalizedUserData {
-//     const baseData = {
-//       provider: providerData.provider,
-//       providerId: providerData.providerId,
-//       email: providerData.email || null,
-//       phone: providerData.phone || null,
-//       name: providerData.name || 'User',
-//       firstName: providerData.firstName || null,
-//       lastName: providerData.lastName || null,
-//       avatar: providerData.avatar || null,
-//       emailVerified: providerData.emailVerified || false,
-//       phoneVerified: providerData.phoneVerified || false,
-//       metadata: providerData.raw || {},
-//     };
+  // Verify the code and return user data
+  async verifyCodeAndGetUserData(
+    phoneNumber: string,
+    code: string
+  ): Promise<WhatsAppUserData> {
+    try {
+      const verificationCheck = await this.client.verify.v2
+        .services(this.verifyServiceSid)
+        .verificationChecks.create({
+          to: phoneNumber,
+          code: code,
+        });
 
-//     // Provider-specific additions
-//     switch (providerData.provider) {
-//       case 'google':
-//         baseData.locale = (providerData as GoogleUserData).locale;
-//         break;
-//       case 'apple':
-//         baseData.isPrivateEmail = (
-//           providerData as AppleUserData
-//         ).isPrivateEmail;
-//         break;
-//       case 'whatsapp':
-//         baseData.verificationSid = (
-//           providerData as WhatsAppUserData
-//         ).verificationSid;
-//         break;
-//     }
+      if (verificationCheck.status !== 'approved') {
+        throw new Error('Invalid verification code');
+      }
 
-//     return baseData;
-//   }
+      // Format phone number for consistency
+      const formattedPhone = this.formatPhoneNumber(phoneNumber);
 
-//   // Get user data based on provider and token/credentials
-//   async getUserData(
-//     provider: 'google',
-//     credentials: GoogleCredentials
-//   ): Promise<NormalizedUserData>;
-//   async getUserData(
-//     provider: 'apple',
-//     credentials: AppleCredentials
-//   ): Promise<NormalizedUserData>;
-//   async getUserData(
-//     provider: 'whatsapp',
-//     credentials: WhatsAppCredentials
-//   ): Promise<NormalizedUserData>;
-//   async getUserData(
-//     provider: 'google' | 'apple' | 'whatsapp',
-//     credentials: GoogleCredentials | AppleCredentials | WhatsAppCredentials
-//   ): Promise<NormalizedUserData> {
-//     try {
-//       let providerData: GoogleUserData | AppleUserData | WhatsAppUserData;
+      return {
+        provider: 'whatsapp',
+        providerId: formattedPhone,
+        phone: formattedPhone,
+        phoneVerified: true,
+        email: null,
+        name: null, // WhatsApp doesn't provide name
+        firstName: null,
+        lastName: null,
+        avatar: null,
+        verificationSid: verificationCheck.sid,
+        raw: verificationCheck,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`WhatsApp verification failed: ${errorMessage}`);
+    }
+  }
 
-//       switch (provider) {
-//         case 'google':
-//           const googleCreds = credentials as GoogleCredentials;
-//           if (googleCreds.idToken) {
-//             providerData = await this.google.verifyGoogleToken(
-//               googleCreds.idToken
-//             );
-//           } else if (googleCreds.accessToken) {
-//             providerData = await this.google.getUserDataFromAccessToken(
-//               googleCreds.accessToken
-//             );
-//           } else {
-//             throw new Error(
-//               'Google credentials missing: idToken or accessToken required'
-//             );
-//           }
-//           break;
+  // Optional: Get WhatsApp profile info if you have WhatsApp Business API
+  async getWhatsAppProfile(
+    phoneNumber: string,
+    accessToken: string
+  ): Promise<{
+    provider: 'whatsapp';
+    providerId: string;
+    phone: string;
+    name: string | null;
+    avatar: string | null;
+    status: string | null;
+    raw: Record<string, unknown>;
+  }> {
+    try {
+      const response = await fetch(
+        `https://graph.facebook.com/v18.0/${phoneNumber}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
-//         case 'apple':
-//           const appleCreds = credentials as AppleCredentials;
-//           if (appleCreds.idToken) {
-//             providerData = await this.apple.verifyAppleToken(
-//               appleCreds.idToken,
-//               appleCreds.clientId
-//             );
-//           } else {
-//             throw new Error('Apple credentials missing: idToken required');
-//           }
-//           break;
+      if (!response.ok) {
+        throw new Error(`WhatsApp API error: ${response.status}`);
+      }
 
-//         case 'whatsapp':
-//           const whatsappCreds = credentials as WhatsAppCredentials;
-//           if (whatsappCreds.phoneNumber && whatsappCreds.code) {
-//             providerData = await this.whatsapp.verifyCodeAndGetUserData(
-//               whatsappCreds.phoneNumber,
-//               whatsappCreds.code
-//             );
-//           } else {
-//             throw new Error(
-//               'WhatsApp credentials missing: phoneNumber and code required'
-//             );
-//           }
-//           break;
+      const profileData: Record<string, unknown> = await response.json();
 
-//         default:
-//           throw new Error(`Unsupported provider: ${provider}`);
-//       }
+      return {
+        provider: 'whatsapp',
+        providerId: phoneNumber,
+        phone: phoneNumber,
+        name: (profileData.display_name as string) || null,
+        avatar: (profileData.profile_picture_url as string) || null,
+        status: (profileData.status as string) || null,
+        raw: profileData,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to fetch WhatsApp profile: ${errorMessage}`);
+    }
+  }
 
-//       return this.normalizeUserData(providerData);
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
-// }
+  // Utility function to format phone numbers consistently
+  formatPhoneNumber(phoneNumber: string): string {
+    // Remove all non-digit characters except +
+    let formatted = phoneNumber.replace(/[^\d+]/g, '');
 
-// // Export everything
-// export {
-//   GoogleAuthProvider,
-//   AppleAuthProvider,
-//   WhatsAppAuthProvider,
-//   AuthProviderManager,
-//   GoogleUserData,
-//   AppleUserData,
-//   WhatsAppUserData,
-//   NormalizedUserData,
-//   AuthProviderConfig,
-//   GoogleCredentials,
-//   AppleCredentials,
-//   WhatsAppCredentials,
-// };
+    // Ensure it starts with +
+    if (!formatted.startsWith('+')) {
+      formatted = '+' + formatted;
+    }
 
-// // Usage Examples:
+    return formatted;
+  }
+}
 
-// /*
-// // Initialize the manager
-// const authManager = new AuthProviderManager({
-//   google: {
-//     clientId: process.env.GOOGLE_CLIENT_ID!
-//   },
-//   whatsapp: {
-//     accountSid: process.env.TWILIO_ACCOUNT_SID!,
-//     authToken: process.env.TWILIO_AUTH_TOKEN!,
-//     verifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID!
-//   }
-// });
+// Unified Auth Provider Manager
+class AuthProviderManager {
+  private google: GoogleAuthProvider;
+  private apple: AppleAuthProvider;
+  private whatsapp: WhatsAppAuthProvider;
 
-// // Get Google user data
-// const googleUser = await authManager.getUserData('google', {
-//   idToken: 'google_id_token_here'
-// });
+  constructor(config: AuthProviderConfig) {
+    this.google = new GoogleAuthProvider(config.google.clientId);
+    this.apple = new AppleAuthProvider();
+    this.whatsapp = new WhatsAppAuthProvider(
+      config.whatsapp.accountSid,
+      config.whatsapp.authToken,
+      config.whatsapp.verifyServiceSid
+    );
+  }
 
-// // Get Apple user data
-// const appleUser = await authManager.getUserData('apple', {
-//   idToken: 'apple_id_token_here',
-//   clientId: process.env.APPLE_CLIENT_ID!
-// });
+  // Normalize user data from any provider
+  normalizeUserData(
+    providerData: GoogleUserData | AppleUserData | WhatsAppUserData
+  ): NormalizedUserData {
+    const baseData: NormalizedUserData = {
+      provider: providerData.provider,
+      providerId: providerData.providerId,
+      email: providerData.email || null,
+      phone: 'phone' in providerData ? providerData.phone : null,
+      name: providerData.name || 'User',
+      firstName: providerData.firstName || null,
+      lastName: providerData.lastName || null,
+      avatar: providerData.avatar || null,
+      emailVerified:
+        'emailVerified' in providerData ? providerData.emailVerified : false,
+      phoneVerified:
+        'phoneVerified' in providerData ? providerData.phoneVerified : false,
+      metadata: providerData.raw as Record<string, unknown>,
+    };
 
-// // Get WhatsApp user data
-// const whatsappUser = await authManager.getUserData('whatsapp', {
-//   phoneNumber: '+1234567890',
-//   code: '123456'
-// });
+    // Provider-specific additions
+    switch (providerData.provider) {
+      case 'google':
+        baseData.locale = (providerData as GoogleUserData).locale;
+        break;
+      case 'apple':
+        baseData.isPrivateEmail = (
+          providerData as AppleUserData
+        ).isPrivateEmail;
+        break;
+      case 'whatsapp':
+        baseData.verificationSid = (
+          providerData as WhatsAppUserData
+        ).verificationSid;
+        break;
+    }
 
-// // All return normalized data structure:
-// {
-//   provider: 'google|apple|whatsapp',
-//   providerId: 'unique_id_from_provider',
-//   email: 'user@example.com',
-//   phone: '+1234567890',
-//   name: 'John Doe',
-//   firstName: 'John',
-//   lastName: 'Doe',
-//   avatar: 'https://avatar-url.com',
-//   emailVerified: true,
-//   phoneVerified: true,
-//   metadata: { // raw provider data }
-// }
-// */
+    return baseData;
+  }
+
+  // Get user data based on provider and token/credentials - using overloads for type safety
+  async getUserData(
+    provider: 'google',
+    credentials: GoogleCredentials
+  ): Promise<NormalizedUserData>;
+  async getUserData(
+    provider: 'apple',
+    credentials: AppleCredentials
+  ): Promise<NormalizedUserData>;
+  async getUserData(
+    provider: 'whatsapp',
+    credentials: WhatsAppCredentials
+  ): Promise<NormalizedUserData>;
+  async getUserData(
+    provider: 'google' | 'apple' | 'whatsapp',
+    credentials: GoogleCredentials | AppleCredentials | WhatsAppCredentials
+  ): Promise<NormalizedUserData> {
+    try {
+      let providerData: GoogleUserData | AppleUserData | WhatsAppUserData;
+
+      switch (provider) {
+        case 'google': {
+          const googleCreds = credentials as GoogleCredentials;
+          if (googleCreds.idToken) {
+            providerData = await this.google.verifyGoogleToken(
+              googleCreds.idToken
+            );
+          } else if (googleCreds.accessToken) {
+            providerData = await this.google.getUserDataFromAccessToken(
+              googleCreds.accessToken
+            );
+          } else {
+            throw new Error(
+              'Google credentials missing: idToken or accessToken required'
+            );
+          }
+          break;
+        }
+
+        case 'apple': {
+          const appleCreds = credentials as AppleCredentials;
+          if (appleCreds.idToken) {
+            providerData = await this.apple.verifyAppleToken(
+              appleCreds.idToken,
+              appleCreds.clientId
+            );
+          } else {
+            throw new Error('Apple credentials missing: idToken required');
+          }
+          break;
+        }
+
+        case 'whatsapp': {
+          const whatsappCreds = credentials as WhatsAppCredentials;
+          if (whatsappCreds.phoneNumber && whatsappCreds.code) {
+            providerData = await this.whatsapp.verifyCodeAndGetUserData(
+              whatsappCreds.phoneNumber,
+              whatsappCreds.code
+            );
+          } else {
+            throw new Error(
+              'WhatsApp credentials missing: phoneNumber and code required'
+            );
+          }
+          break;
+        }
+
+        default:
+          throw new Error(`Unsupported provider: ${provider}`);
+      }
+
+      return this.normalizeUserData(providerData);
+    } catch (error) {
+      // Re-throw the error to maintain the original error message
+      throw error;
+    }
+  }
+
+  // Additional helper methods
+  async sendWhatsAppVerification(
+    phoneNumber: string
+  ): Promise<WhatsAppVerificationResponse> {
+    return this.whatsapp.sendVerificationCode(phoneNumber);
+  }
+
+  async parseAppleUserData(
+    identityToken: string,
+    user?: string | AppleUserInfo
+  ): Promise<AppleUserData> {
+    return this.apple.parseAppleUserData(identityToken, user);
+  }
+}
+
+// Export everything
+export {
+  GoogleAuthProvider,
+  AppleAuthProvider,
+  WhatsAppAuthProvider,
+  AuthProviderManager,
+  type GoogleUserData,
+  type AppleUserData,
+  type WhatsAppUserData,
+  type NormalizedUserData,
+  type AuthProviderConfig,
+  type GoogleCredentials,
+  type AppleCredentials,
+  type WhatsAppCredentials,
+  type AppleJWTPayload,
+  type AppleUserInfo,
+  type WhatsAppVerificationResponse,
+};
+
+

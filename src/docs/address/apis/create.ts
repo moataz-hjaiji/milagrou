@@ -4,8 +4,6 @@
  *    post:
  *      tags: [Address]
  *      summary: Create a new Address
- *      security:
- *        - bearerAuth: []
  *      consumes:
  *        - application/json
  *        - multipart/form-data

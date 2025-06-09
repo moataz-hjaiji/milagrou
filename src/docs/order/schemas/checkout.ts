@@ -9,6 +9,11 @@
  *         - orderType
  *         - paymentMethodId
  *       properties:
+ *         userId:
+ *           type: string
+ *           format: uuid
+ *         browserId:
+ *           type: string
  *         deliveryType:
  *           type: string
  *           enum:

@@ -6,32 +6,36 @@ import schema from './schema';
 
 const router = express.Router();
 
-router.get('/me', authentication, cartController.getMyCart);
+router.get(
+  '/me',
+  //  authentication,
+  cartController.getMyCart
+);
 
 router.post(
   '/add',
-  authentication,
+  // authentication,
   validator(schema.addToCart),
   cartController.addToCart
 );
 
 router.delete(
   '/remove',
-  authentication,
+  // authentication,
   validator(schema.removeFromCart),
   cartController.removeFromCart
 );
 
 router.put(
   '/quantity',
-  authentication,
+  // authentication,
   validator(schema.incrementOrDecrement),
   cartController.incrementOrDecrement
 );
 
 router.put(
   '/edit',
-  authentication,
+  // authentication,
   validator(schema.editItem),
   cartController.editItem
 );

@@ -18,6 +18,4 @@
  *          description: Access Denied / Unauthorized
  *        500:
  *          description: Internal server error
- *      security:
- *        - bearerAuth: []
  */

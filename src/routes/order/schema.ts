@@ -13,6 +13,8 @@ export default {
   }),
 
   checkout: Joi.object().keys({
+    userId: JoiObjectId(),
+    browserId: Joi.string(),
     deliveryType: Joi.string()
       .valid(DeliveryType.DELIVERY, DeliveryType.PICKUP)
       .required(),
@@ -35,7 +37,8 @@ export default {
     status: Joi.string().valid(
       OrderStatus.PENDING,
       OrderStatus.DELIVERED,
-      OrderStatus.SHIPPED
+      OrderStatus.SHIPPED,
+      OrderStatus.COMPLETED
     ),
   }),
 };

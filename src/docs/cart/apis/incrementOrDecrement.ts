@@ -4,8 +4,6 @@
  *    put:
  *      tags: [Cart]
  *      summary: increment or decrement an item
- *      security:
- *        - bearerAuth: []
  *      consumes:
  *        - application/json
  *        - multipart/form-data

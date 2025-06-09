@@ -4,8 +4,6 @@
  *    get:
  *      summary: Get all the Addresss
  *      tags: [Address]
- *      security:
- *        - bearerAuth: []
  *      responses:
  *        200:
  *          content:

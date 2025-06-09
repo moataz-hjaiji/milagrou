@@ -2,7 +2,7 @@
  * @swagger
  * components:
  *   schemas:
- *     CreateRating:
+ *     UpdateRating:
  *       type: object
  *       required:
  *       properties:

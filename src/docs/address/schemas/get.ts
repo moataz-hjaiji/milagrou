@@ -8,6 +8,8 @@
  *         userId:
  *           type: string
  *           format: objectId
+ *         browserId:
+ *           type: string
  *         areaId:
  *           type: string
  *           format: objectId

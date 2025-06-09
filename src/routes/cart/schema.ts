@@ -8,12 +8,16 @@ export default {
   }),
 
   addToCart: Joi.object().keys({
+    userId: JoiObjectId(),
+    browserId: Joi.string(),
     product: JoiObjectId().required(),
     quantity: Joi.number().integer().min(1).required(),
     supplements: Joi.array().items(JoiObjectId()),
   }),
 
   incrementOrDecrement: Joi.object().keys({
+    userId: JoiObjectId(),
+    browserId: Joi.string(),
     itemId: JoiObjectId().required(),
     action: Joi.string()
       .valid(...Object.values(CartAction))
@@ -21,10 +25,14 @@ export default {
   }),
 
   removeFromCart: Joi.object().keys({
+    userId: JoiObjectId(),
+    browserId: Joi.string(),
     itemId: JoiObjectId().required(),
   }),
 
   editItem: Joi.object().keys({
+    userId: JoiObjectId(),
+    browserId: Joi.string(),
     itemId: JoiObjectId().required(),
     item: Joi.object().keys({
       supplements: Joi.array().items(JoiObjectId()),

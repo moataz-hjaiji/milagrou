@@ -2,15 +2,29 @@ import { ObjectId } from 'mongoose';
 import CartRepo from '../../database/repository/CartRepo';
 import { calculateItemPrices } from './calculateCartPrices';
 
-export const getMyCart = async (userId: ObjectId) => {
-  let cart;
+interface getMyCartParams {
+  userId: ObjectId;
+  browserId: string;
+}
+
+export const getMyCart = async ({ userId, browserId }: getMyCartParams) => {
+  let cart: any;
   let totalCartPrice = 0;
 
-  const cartCheck = await CartRepo.findByObj({ userId });
-  if (!cartCheck) {
-    cart = await CartRepo.create({ userId });
-  } else {
-    cart = cartCheck;
+  if (userId) {
+    const cartCheck = await CartRepo.findByObj({ userId });
+    if (!cartCheck) {
+      cart = await CartRepo.create({ userId });
+    } else {
+      cart = cartCheck;
+    }
+  } else if (browserId) {
+    const cartCheck = await CartRepo.findByObj({ browserId });
+    if (!cartCheck) {
+      cart = await CartRepo.create({ browserId });
+    } else {
+      cart = cartCheck;
+    }
   }
 
   await cart.populate([

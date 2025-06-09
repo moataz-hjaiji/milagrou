@@ -4,8 +4,6 @@
  *    delete:
  *      tags: [Cart]
  *      summary: remove an item from my cart
- *      security:
- *        - bearerAuth: []
  *      consumes:
  *        - application/json
  *        - multipart/form-data

@@ -8,6 +8,11 @@
  *         - product
  *         - quantity
  *       properties:
+ *         userId:
+ *           type: string
+ *           format: uuid
+ *         browserId:
+ *           type: string
  *         product:
  *           type: string
  *           format: uuid

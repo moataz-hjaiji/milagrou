@@ -8,6 +8,8 @@
  *         userId:
  *           type: string
  *           format: uuid
+ *         browserId:
+ *           type: string
  *         totalCartPrice:
  *           type: number
  *         items:

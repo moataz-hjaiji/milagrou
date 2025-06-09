@@ -7,7 +7,8 @@ export default {
   }),
 
   create: Joi.object().keys({
-    userId: JoiObjectId().required(),
+    userId: JoiObjectId(),
+    browserId: Joi.string(),
     areaId: JoiObjectId().required(),
     block: Joi.string().required(),
     street: Joi.string().required(),
@@ -17,6 +18,7 @@ export default {
 
   update: Joi.object().keys({
     userId: JoiObjectId(),
+    browserId: Joi.string(),
     areaId: JoiObjectId(),
     block: Joi.string(),
     street: Joi.string(),

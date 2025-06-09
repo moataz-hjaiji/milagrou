@@ -8,6 +8,11 @@
  *         - itemId
  *         - action
  *       properties:
+ *         userId:
+ *           type: string
+ *           format: uuid
+ *         browserId:
+ *           type: string
  *         itemId:
  *           type: string
  *           format: uuid

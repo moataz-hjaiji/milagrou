@@ -5,16 +5,17 @@
  *     GetRating:
  *       type: object
  *       properties:
- *         orderId:
+ *         userId:
  *           type: string
  *           format: uuid
- *         foodRating:
- *           type: number
- *         foodComment:
+ *         productId:
  *           type: string
- *         deliveryRating:
+ *           format: uuid
+ *         rating:
  *           type: number
- *         deliveryComment:
+ *         comment:
+ *           type: string
+ *         isAccepted:
  *           type: string
  *         createdAt:
  *           type: string

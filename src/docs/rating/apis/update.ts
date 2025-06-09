@@ -1,30 +1,29 @@
 /**
  * @swagger
- * /orders/{id}:
+ * /ratings/{id}:
  *    put:
- *      summary: Update Order by id
+ *      tags: [Rating]
+ *      summary: Update a new Rating
+ *      security:
+ *        - bearerAuth: []
  *      consumes:
  *        - application/json
  *        - multipart/form-data
- *      tags: [Order]
- *      parameters:
- *        - in: path
- *          name: id
  *      requestBody:
  *        required: true
  *        content:
  *          application/json:
  *              schema:
- *                $ref: '#components/schemas/UpdateOrder'
+ *                $ref: '#components/schemas/UpdateRating'
  *          multipart/form-data:
  *              schema:
- *                $ref: '#components/schemas/UpdateOrder'
+ *                $ref: '#components/schemas/UpdateRating'
  *      responses:
  *        200:
  *          content:
  *            application/json:
  *              schema:
- *                $ref: '#/components/schemas/GetOrder'
+ *                $ref: '#/components/schemas/GetRating'
  *        400:
  *          description: 	Validation Failed
  *        401:
@@ -33,5 +32,4 @@
  *          description: Access Denied / Unauthorized
  *        500:
  *          description: Internal server error
- *
  */

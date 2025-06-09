@@ -3,8 +3,6 @@
  * /addresses/{id}:
  *    put:
  *      summary: Update Address by id
- *      security:
- *        - bearerAuth: []
  *      consumes:
  *        - application/json
  *        - multipart/form-data

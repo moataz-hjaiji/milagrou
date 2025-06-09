@@ -4,8 +4,6 @@
  *    post:
  *      tags: [Order]
  *      summary: checkout order
- *      security:
- *        - bearerAuth: []
  *      consumes:
  *        - application/json
  *        - multipart/form-data

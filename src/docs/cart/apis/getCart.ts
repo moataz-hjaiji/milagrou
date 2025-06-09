@@ -4,8 +4,6 @@
  *    get:
  *      tags: [Cart]
  *      summary: get my cart
- *      security:
- *        - bearerAuth: []
  *      responses:
  *        200:
  *          content:

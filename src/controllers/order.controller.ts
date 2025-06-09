@@ -18,10 +18,13 @@ export const checkout = asyncHandler(
       paymentMethodId,
       addressId,
       code,
+      userId,
+      browserId,
     } = req.body;
-    const userId = req.user._id;
+
     const result = await orderService.checkout({
       userId,
+      browserId,
       deliveryType,
       orderType,
       reservationDate,

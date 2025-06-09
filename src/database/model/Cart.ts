@@ -22,12 +22,16 @@ export interface ICartItem {
 
 export default interface ICart extends Document {
   userId: IUser | ObjectId;
+  browserId: string;
   items: ICartItem[];
   deletedAt?: Date;
 }
 
 const schema = new Schema<ICart>(
   {
+    browserId: {
+      type: Schema.Types.String,
+    },
     userId: {
       type: Schema.Types.ObjectId,
       ref: () => USER_DOCUMENT_NAME,

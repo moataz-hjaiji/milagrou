@@ -9,6 +9,7 @@ const ADDRESS_COLLECTION_NAME = 'Addresses';
 
 export default interface IAddress extends Document {
   userId: IUser | ObjectId;
+  browserId: string;
   areaId: IArea | ObjectId;
   block: string;
   street: string;
@@ -22,6 +23,9 @@ const schema = new Schema<IAddress>(
     userId: {
       type: Schema.Types.ObjectId,
       ref: () => USER_DOCUMENT_NAME,
+    },
+    browserId: {
+      type: Schema.Types.String,
     },
     areaId: {
       type: Schema.Types.ObjectId,

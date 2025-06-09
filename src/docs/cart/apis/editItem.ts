@@ -4,8 +4,6 @@
  *    put:
  *      tags: [Cart]
  *      summary: edit item in my cart
- *      security:
- *        - bearerAuth: []
  *      consumes:
  *        - application/json
  *        - multipart/form-data
