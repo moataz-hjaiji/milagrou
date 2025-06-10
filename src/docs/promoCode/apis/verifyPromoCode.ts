@@ -4,8 +4,6 @@
  *    post:
  *      tags: [PromoCode]
  *      summary: verify promo code
- *      security:
- *        - bearerAuth: []
  *      consumes:
  *        - application/json
  *        - multipart/form-data

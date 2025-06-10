@@ -9,17 +9,19 @@ import { ACTIONS } from '../../helpers/seeder/seed.permission';
 
 const router = express.Router();
 
-router.use('/', authentication);
+// router.use('/', authentication);
 
 router
   .route('/')
   .post(
+    authentication,
     // assignAction({ action: ACTIONS.create, entity: 'PromoCode' }),
     // authorization,
     validator(schema.create),
     promoCodeController.create
   )
   .get(
+    authentication,
     // assignAction({ action: ACTIONS.list, entity: 'PromoCode' }),
     // authorization,
     promoCodeController.getAll
@@ -32,12 +34,14 @@ router
 router
   .route('/:id')
   .get(
+    authentication,
     // assignAction({ action: ACTIONS.read, entity: 'PromoCode' }),
     // authorization,
     validator(schema.param, ValidationSource.PARAM),
     promoCodeController.getOne
   )
   .put(
+    authentication,
     // assignAction({ action: ACTIONS.update, entity: 'PromoCode' }),
     // authorization,
     validator(schema.param, ValidationSource.PARAM),
@@ -45,6 +49,7 @@ router
     promoCodeController.update
   )
   .delete(
+    authentication,
     // assignAction({ action: ACTIONS.delete, entity: 'PromoCode' }),
     // authorization,
     validator(schema.param, ValidationSource.PARAM),

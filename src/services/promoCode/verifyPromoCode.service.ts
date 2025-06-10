@@ -7,15 +7,23 @@ import { DiscountType } from '../../database/model/Discount';
 
 interface verifyPromoCodeParams {
   userId: ObjectId;
+  browserId: ObjectId;
   code: string;
 }
 
 export const verifyPromoCode = async ({
   userId,
+  browserId,
   code,
 }: verifyPromoCodeParams) => {
-  const cart = await CartRepo.findByObj({ userId });
-  if (!cart) throw new BadRequestError('your cart is empty');
+  let cart: any;
+  if (userId) {
+    cart = await CartRepo.findByObj({ userId });
+    if (!cart) throw new BadRequestError('your cart is empty');
+  } else if (browserId) {
+    cart = await CartRepo.findByObj({ browserId });
+    if (!cart) throw new BadRequestError('your cart is empty');
+  }
 
   const currentDate = new Date();
 
@@ -32,11 +40,13 @@ export const verifyPromoCode = async ({
   if (promoCode.maxUsage && promoCode.actualUsage >= promoCode.maxUsage)
     throw new BadRequestError(`promo code reached it's max usage limit `);
 
-  if (promoCode.oneTimeUse) {
-    const exists = promoCode
-      .users!.map((id) => id.toString())
-      .includes(userId.toString());
-    if (exists) throw new BadRequestError('you already used this promo code');
+  if (userId) {
+    if (promoCode.oneTimeUse) {
+      const exists = promoCode
+        .users!.map((id) => id.toString())
+        .includes(userId.toString());
+      if (exists) throw new BadRequestError('you already used this promo code');
+    }
   }
 
   let totalCartPrice = 0;

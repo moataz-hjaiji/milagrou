@@ -58,9 +58,12 @@ export const remove = asyncHandler(
 
 export const verifyPromoCode = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
-    const userId = req.user._id;
-    const { code } = req.body;
-    const result = await promoCodeService.verifyPromoCode({ userId, code });
+    const { code, userId, browserId } = req.body;
+    const result = await promoCodeService.verifyPromoCode({
+      userId,
+      browserId,
+      code,
+    });
     new SuccessResponse('success', result).send(res);
   }
 );

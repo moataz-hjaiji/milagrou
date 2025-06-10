@@ -47,6 +47,8 @@ export default {
   }),
 
   verifyPromoCode: Joi.object().keys({
+    userId: JoiObjectId(),
+    browserId: Joi.string(),
     code: Joi.string().min(3).required(),
   }),
 };
