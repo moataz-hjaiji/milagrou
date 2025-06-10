@@ -19,6 +19,7 @@ import stores from './store/router';
 import deliveryPrices from './deliveryPrice/router';
 import supplements from './supplement/router';
 import popups from './popup/router';
+import stats from './stats/router';
 
 const router = express.Router();
 
@@ -42,5 +43,6 @@ router.use('/stores', stores);
 router.use('/delivery-prices', deliveryPrices);
 router.use('/supplements', supplements);
 router.use('/popups', popups);
+router.use('/stats', stats);
 
 export default router;
