@@ -1,4 +1,4 @@
-import IDiscount, { DiscountModel } from '../../model/Discount';
+import IFeedback, { FeedbackModel } from '../../model/Feedback';
 import { PaginationModel } from 'mongoose-paginate-ts';
 import APIFeatures from '../../../helpers/utils/apiFeatures';
 
@@ -10,13 +10,13 @@ type pagingObj = {
 const findAll = async (
   paging: pagingObj,
   query: object
-): Promise<PaginationModel<IDiscount>> => {
-  let findAllQuery = DiscountModel.find({ deletedAt: null });
+): Promise<PaginationModel<IFeedback>> => {
+  let findAllQuery = FeedbackModel.find({ deletedAt: null });
 
   const features = new APIFeatures(findAllQuery, query)
     .filter()
     .sort()
-    .recherche(['type'])
+    .recherche([''])
     .limitFields()
     .populate();
 
@@ -25,7 +25,7 @@ const findAll = async (
     limit: paging.limit ? paging.limit : null,
     page: paging.page ? paging.page : null,
   };
-  return (await DiscountModel.paginate(options)) as PaginationModel<IDiscount>;
+  return (await FeedbackModel.paginate(options)) as PaginationModel<IFeedback>;
 };
 
 export default findAll;

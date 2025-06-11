@@ -12,6 +12,7 @@
  *         - price
  *         - category
  *         - isRecommended
+ *         - isTopSeller
  *       properties:
  *         nameAng:
  *           type: string
@@ -22,6 +23,8 @@
  *         descriptionAr:
  *           type: string
  *         isRecommended:
+ *           type: boolean
+ *         isTopSeller:
  *           type: boolean
  *         price:
  *           type: number

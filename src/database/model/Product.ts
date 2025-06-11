@@ -24,6 +24,7 @@ export default interface IProduct extends Document {
   descriptionAng: string;
   descriptionAr: string;
   isRecommended: boolean;
+  isTopSeller: boolean;
   images: string[];
   coverImage: string;
   price: number;
@@ -51,6 +52,10 @@ const schema = new Schema<IProduct>(
       trim: true,
     },
     isRecommended: {
+      type: Schema.Types.Boolean,
+      default: false,
+    },
+    isTopSeller: {
       type: Schema.Types.Boolean,
       default: false,
     },

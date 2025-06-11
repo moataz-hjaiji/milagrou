@@ -15,6 +15,8 @@
  *           type: string
  *         isRecommended:
  *           type: boolean
+ *         isTopSeller:
+ *           type: boolean
  *         price:
  *           type: number
  *         images:
