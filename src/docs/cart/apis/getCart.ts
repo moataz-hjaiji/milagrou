@@ -1,7 +1,7 @@
 /**
  * @swagger
  * /carts/me:
- *    get:
+ *    post:
  *      tags: [Cart]
  *      summary: get my cart
  *      responses:

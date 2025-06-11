@@ -11,13 +11,11 @@ const router = express.Router();
 
 router.use('/', authentication);
 
-router
-  .route('/')
-  .post(
-    assignAction({ action: ACTIONS.list, entity: 'Stats' }),
-    authorization,
-    validator(schema.dateRange),
-    statsController.stats
-  );
+router.route('/').post(
+  // assignAction({ action: ACTIONS.list, entity: 'Stats' }),
+  // authorization,
+  validator(schema.dateRange),
+  statsController.stats
+);
 
 export default router;

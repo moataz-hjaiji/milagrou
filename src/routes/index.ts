@@ -22,6 +22,7 @@ import popups from './popup/router';
 import stats from './stats/router';
 import feedbacks from './feedback/router';
 import siteSettings from './siteSetting/router';
+import payments from './payment/router';
 
 const router = express.Router();
 
@@ -48,5 +49,6 @@ router.use('/popups', popups);
 router.use('/stats', stats);
 router.use('/feedbacks', feedbacks);
 router.use('/site-settings', siteSettings);
+router.use('/payments', payments);
 
 export default router;

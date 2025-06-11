@@ -6,7 +6,7 @@ import schema from './schema';
 
 const router = express.Router();
 
-router.get(
+router.post(
   '/me',
   //  authentication,
   cartController.getMyCart
