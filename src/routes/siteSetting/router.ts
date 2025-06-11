@@ -12,13 +12,14 @@ const fileUploadHandler = new FileUploadHandler();
 
 const router = express.Router();
 
-router.use('/', authentication);
+// router.use('/', authentication);
 
 router
   .route('/')
   .post(
     // assignAction({ action: ACTIONS.create, entity: 'SiteSetting' }),
     // authorization,
+    authentication,
     fileUploadHandler.handleCustomFileUpload([
       { name: 'logo' },
       { name: 'url' },
@@ -43,6 +44,7 @@ router
   .put(
     // assignAction({ action: ACTIONS.update, entity: 'SiteSetting' }),
     // authorization,
+    authentication,
     fileUploadHandler.handleCustomFileUpload([
       { name: 'logo' },
       { name: 'url' },
@@ -54,6 +56,7 @@ router
   .delete(
     // assignAction({ action: ACTIONS.delete, entity: 'SiteSetting' }),
     // authorization,
+    authentication,
     validator(schema.param, ValidationSource.PARAM),
     siteSettingController.remove
   );
