@@ -9,13 +9,14 @@ import { ACTIONS } from '../../helpers/seeder/seed.permission';
 
 const router = express.Router();
 
-router.use('/', authentication);
+// router.use('/', authentication);
 
 router
   .route('/')
   .post(
     // assignAction({ action: ACTIONS.create, entity: 'Governorate' }),
     // authorization,
+    authentication,
     validator(schema.create),
     governorateController.create
   )
@@ -36,6 +37,7 @@ router
   .put(
     // assignAction({ action: ACTIONS.update, entity: 'Governorate' }),
     // authorization,
+    authentication,
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     governorateController.update
@@ -43,6 +45,7 @@ router
   .delete(
     // assignAction({ action: ACTIONS.delete, entity: 'Governorate' }),
     // authorization,
+    authentication,
     validator(schema.param, ValidationSource.PARAM),
     governorateController.remove
   );
