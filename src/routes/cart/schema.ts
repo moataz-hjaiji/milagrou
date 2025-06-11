@@ -10,9 +10,11 @@ export default {
   addToCart: Joi.object().keys({
     userId: JoiObjectId(),
     browserId: Joi.string(),
-    product: JoiObjectId().required(),
-    quantity: Joi.number().integer().min(1).required(),
-    supplements: Joi.array().items(JoiObjectId()),
+    item: Joi.object().keys({
+      product: JoiObjectId().required(),
+      quantity: Joi.number().integer().min(1).required(),
+      supplements: Joi.array().items(JoiObjectId()),
+    }),
   }),
 
   incrementOrDecrement: Joi.object().keys({
