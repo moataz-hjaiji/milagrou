@@ -2,7 +2,6 @@ import { model, Schema, Document, ObjectId } from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
 import IAddress, { ADDRESS_DOCUMENT_NAME } from './Address';
-import IPaymentMethod, { PAYMENT_METHOD_DOCUMENT_NAME } from './PaymentMethod';
 import IUser, { USER_DOCUMENT_NAME } from './User';
 import IPromoCode, { PROMO_CODE_DOCUMENT_NAME } from './PromoCode';
 
@@ -40,7 +39,6 @@ export default interface IOrder extends Document {
   paymentStatus: PaymentStatus;
   orderType: OrderType;
   status: OrderStatus;
-  paymentMethodId: IPaymentMethod | ObjectId;
   addressId?: IAddress | ObjectId;
   promoCodeId?: IPromoCode | ObjectId;
   items: any;
@@ -48,6 +46,8 @@ export default interface IOrder extends Document {
   orderPriceWithoutDeliveryPrice: number;
   newId: number;
   reservationDate?: Date;
+  invoiceId: number;
+  invoiceUrl: string;
   deletedAt?: Date;
 }
 
@@ -66,10 +66,6 @@ const schema = new Schema<IOrder>(
     paymentStatus: {
       type: Schema.Types.String,
       default: PaymentStatus.UNPAID,
-    },
-    paymentMethodId: {
-      type: Schema.Types.ObjectId,
-      ref: () => PAYMENT_METHOD_DOCUMENT_NAME,
     },
     addressId: {
       type: Schema.Types.ObjectId,
@@ -122,6 +118,12 @@ const schema = new Schema<IOrder>(
     },
     reservationDate: {
       type: Date,
+    },
+    invoiceId: {
+      type: Number,
+    },
+    invoiceUrl: {
+      type: String,
     },
     deletedAt: {
       type: Date,

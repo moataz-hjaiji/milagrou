@@ -11,12 +11,20 @@ const router = express.Router();
 
 // router.use('/', authentication);
 
-router.route('/').post(
+router.route('/webhook').post(
   // assignAction({ action: ACTIONS.create, entity: 'Area' }),
   // authorization,
   // authentication,
   // validator(schema.create),
-  paymentController.create
+  paymentController.webhook
+);
+
+router.route('/').post(
+  // assignAction({ action: ACTIONS.create, entity: 'Area' }),
+  // authorization,
+  // authentication,
+  validator(schema.InvoiceStatus),
+  paymentController.InvoiceStatus
 );
 
 export default router;

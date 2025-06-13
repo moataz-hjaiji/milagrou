@@ -3,10 +3,12 @@ import { BadRequestError, NotFoundError } from '../../core/ApiError';
 import CartRepo from '../../database/repository/CartRepo';
 import OrderRepo from '../../database/repository/OrderRepo';
 import { calculateOrderPrices } from './calculateOrderPrices';
-import { DeliveryType, OrderStatus } from '../../database/model/Order';
+import { DeliveryType } from '../../database/model/Order';
 import PromoCodeRepo from '../../database/repository/PromoCodeRepo';
 import { DiscountType } from '../../database/model/Discount';
 import DeliveryPriceRepo from '../../database/repository/DeliveryPriceRepo';
+import UserRepo from '../../database/repository/UserRepo';
+import { createInvoice } from '../../helpers/paymentGateway/methods';
 
 interface checkoutParams {
   userId: ObjectId;
@@ -14,7 +16,6 @@ interface checkoutParams {
   deliveryType: string;
   orderType: string;
   reservationDate?: Date;
-  paymentMethodId: string;
   addressId?: string;
   code?: string;
 }
@@ -25,7 +26,6 @@ export const checkout = async ({
   deliveryType,
   orderType,
   reservationDate,
-  paymentMethodId,
   addressId,
   code,
 }: checkoutParams) => {
@@ -122,11 +122,20 @@ export const checkout = async ({
 
     if (orderNewIdCheck?.newId) newId = orderNewIdCheck?.newId + 1;
 
+    const user = await UserRepo.findById(userId);
+
+    const paymentData = {
+      NotificationOption: 'LNK',
+      CustomerName: `${user?.firstName} ${user?.lastName}`,
+      InvoiceValue: orderPrice,
+    };
+
+    const result = await createInvoice(paymentData);
+
     const order = await OrderRepo.create({
       userId,
       deliveryType,
       orderType,
-      paymentMethodId,
       addressId,
       orderPrice,
       orderPriceWithoutDeliveryPrice,
@@ -134,6 +143,8 @@ export const checkout = async ({
       promoCodeId: promoCode?._id,
       items,
       reservationDate,
+      invoiceId: result.Data.InvoiceId,
+      invoiceUrl: result.Data.InvoiceURL,
     } as any);
 
     if (promoCode) {
@@ -231,11 +242,18 @@ export const checkout = async ({
 
     if (orderNewIdCheck?.newId) newId = orderNewIdCheck?.newId + 1;
 
+    const paymentData = {
+      NotificationOption: 'LNK',
+      CustomerName: `Guest User`,
+      InvoiceValue: orderPrice,
+    };
+
+    const result = await createInvoice(paymentData);
+
     const order = await OrderRepo.create({
       browserId,
       deliveryType,
       orderType,
-      paymentMethodId,
       addressId,
       orderPrice,
       orderPriceWithoutDeliveryPrice,
@@ -243,6 +261,8 @@ export const checkout = async ({
       promoCodeId: promoCode?._id,
       items,
       reservationDate,
+      invoiceId: result.Data.InvoiceId,
+      invoiceUrl: result.Data.InvoiceURL,
     } as any);
 
     if (promoCode) {

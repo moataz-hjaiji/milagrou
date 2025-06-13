@@ -5,4 +5,8 @@ export default {
   param: Joi.object().keys({
     id: JoiObjectId().required(),
   }),
+
+  InvoiceStatus: Joi.object().keys({
+    invoiceId: Joi.string().required(),
+  }),
 };

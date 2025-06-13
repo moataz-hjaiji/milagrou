@@ -21,7 +21,6 @@ export default {
     orderType: Joi.string()
       .valid(OrderType.GIFT, OrderType.RESERVATION, OrderType.NORMAL)
       .required(),
-    paymentMethodId: JoiObjectId().required(),
     addressId: JoiObjectId(),
     code: Joi.string(),
     reservationDate: Joi.date(),

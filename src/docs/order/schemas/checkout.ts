@@ -7,7 +7,6 @@
  *       required:
  *         - deliveryType
  *         - orderType
- *         - paymentMethodId
  *       properties:
  *         userId:
  *           type: string
@@ -27,9 +26,6 @@
  *             - RESERVATION
  *         code:
  *           type: string
- *         paymentMethodId:
- *           type: string
- *           format: uuid
  *         addressId:
  *           type: string
  *           format: uuid

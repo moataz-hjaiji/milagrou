@@ -3,7 +3,6 @@ import auth from './auth/router';
 import users from './user/router';
 import categories from './category/router';
 import products from './product/router';
-import paymentMethods from './paymentMethod/router';
 import addresses from './address/router';
 import carts from './cart/router';
 import orders from './order/router';
@@ -30,7 +29,7 @@ router.use('/auth', auth);
 router.use('/users', users);
 router.use('/categories', categories);
 router.use('/products', products);
-router.use('/payment-methods', paymentMethods);
+
 router.use('/addresses', addresses);
 router.use('/carts', carts);
 router.use('/orders', orders);

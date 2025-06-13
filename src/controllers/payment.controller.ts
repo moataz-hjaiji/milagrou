@@ -9,10 +9,17 @@ import {
   SuccessResponsePaginate,
 } from '../core/ApiResponse';
 
-export const create = asyncHandler(
+export const webhook = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
-    // const { body } = req;
-    const result = await paymentService.create();
+    const result = await paymentService.webhook(req);
+    new SuccessResponse('success', result).send(res);
+  }
+);
+
+export const InvoiceStatus = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { invoiceId } = req.body;
+    const result = await paymentService.InvoiceStatus(invoiceId);
     new SuccessResponse('success', result).send(res);
   }
 );

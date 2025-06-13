@@ -20,11 +20,28 @@ class APIFeatures {
       'search',
       'populate',
     ];
+
     excludedFields.forEach((el) => delete queryObj[el]);
 
     let checkForValidMongoDbID = new RegExp('^[0-9a-fA-F]{24}$');
 
     const queryStrObj: Record<string, any> = {};
+
+    // Handle date filtering
+    if (queryObj.dateField && queryObj.startDate && queryObj.endDate) {
+      const dateField = queryObj.dateField as string;
+      const startDate = new Date(queryObj.startDate as string);
+      const endDate = new Date(queryObj.endDate as string);
+
+      queryStrObj[dateField] = {
+        $gte: startDate,
+        $lte: endDate,
+      };
+    }
+
+    const excludedDateFields = ['startDate', 'endDate', 'dateField'];
+
+    excludedDateFields.forEach((el) => delete queryObj[el]);
 
     for (const key in queryObj) {
       let value = queryObj[key];
@@ -35,7 +52,7 @@ class APIFeatures {
         );
       } else if (value === 'true' || value === 'false') {
         //@ts-ignore
-        value = value === ('true' as string); // Explicit cast to string
+        value = value === ('true' as string);
       } else if (checkForValidMongoDbID.test(value)) {
         //@ts-ignore
         value = new ObjectId(value);
@@ -52,6 +69,8 @@ class APIFeatures {
         } else if (typeof value === 'boolean') {
           return { [field]: value };
         } else if (value instanceof ObjectId) {
+          return { [field]: value };
+        } else if (typeof value === 'object' && value.$gte && value.$lte) {
           return { [field]: value };
         } else {
           return { [field]: { $regex: value, $options: 'i' } };
@@ -97,6 +116,10 @@ class APIFeatures {
 
         // Handle nested populates
         const paths = field.split('.');
+        paths.forEach((element, index, arr) => {
+          arr[index] = element.replace(/_/g, '.');
+        });
+
         let populateObject: any = {};
 
         // Handle first level

@@ -8,6 +8,7 @@ export default {
 
   create: Joi.object().keys({
     branding: Joi.object().keys({
+      logo: Joi.string(),
       primaryColor: Joi.string(),
       secondaryColor: Joi.string(),
       themeColor: Joi.string(),
@@ -38,6 +39,7 @@ export default {
         isEnabled: Joi.boolean(),
       }),
       videoUrl: Joi.object().keys({
+        url: Joi.string(),
         titleAng: Joi.string(),
         titleAr: Joi.string(),
         isEnabled: Joi.boolean(),

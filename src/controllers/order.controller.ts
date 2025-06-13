@@ -15,7 +15,6 @@ export const checkout = asyncHandler(
       deliveryType,
       orderType,
       reservationDate,
-      paymentMethodId,
       addressId,
       code,
       userId,
@@ -28,7 +27,6 @@ export const checkout = asyncHandler(
       deliveryType,
       orderType,
       reservationDate,
-      paymentMethodId,
       addressId,
       code,
     });

@@ -64,3 +64,8 @@ export const twilioSettings = {
   authToken: process.env.AUTH_TOKEN,
   phoneNumber: process.env.PHONE_NUMBER,
 };
+
+export const myFatoorahSettings = {
+  token: process.env.MY_FATOORAH_TOKEN,
+  baseUrl: process.env.MY_FATOORAH_BASEURL,
+};

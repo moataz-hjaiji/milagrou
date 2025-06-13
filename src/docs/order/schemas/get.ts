@@ -12,9 +12,6 @@
  *           type: string
  *         orderType:
  *           type: string
- *         paymentMethodId:
- *           type: string
- *           format: uuid
  *         addressId:
  *           type: string
  *           format: uuid
