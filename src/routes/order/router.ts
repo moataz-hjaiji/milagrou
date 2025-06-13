@@ -18,6 +18,12 @@ router.route('/').get(
 );
 
 router.post('/checkout', validator(schema.checkout), orderController.checkout);
+router.post(
+  '/accept/:id',
+  // authentication,
+  validator(schema.acceptOrder),
+  orderController.acceptOrder
+);
 
 router
   .route('/:id')

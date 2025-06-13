@@ -34,11 +34,19 @@ export const checkout = asyncHandler(
   }
 );
 
+export const acceptOrder = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { id } = req.params;
+    const body = req.body;
+    const result = await orderService.acceptOrder({ id, body });
+    new SuccessResponse('Order Accepted', result).send(res);
+  }
+);
+
 export const getAll = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
     const { query } = req;
     const result = await orderService.getAll(query);
-
     new SuccessResponsePaginate(
       'All orders returned successfully',
       result.docs,

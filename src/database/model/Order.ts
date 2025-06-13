@@ -10,9 +10,11 @@ const ORDER_COLLECTION_NAME = 'Orders';
 
 export const enum OrderStatus {
   PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  COMPLETED = 'COMPLETED',
+  CANCELED = 'CANCELED',
   SHIPPED = 'SHIPPED',
   DELIVERED = 'DELIVERED',
-  COMPLETED = 'COMPLETED',
 }
 
 export const enum PaymentStatus {

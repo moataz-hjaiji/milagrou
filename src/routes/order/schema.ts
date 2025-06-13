@@ -26,6 +26,18 @@ export default {
     reservationDate: Joi.date(),
   }),
 
+  acceptOrder: Joi.object().keys({
+    items: Joi.array()
+      .items(
+        Joi.object().keys({
+          productId: JoiObjectId().required(),
+          storeId: JoiObjectId().required(),
+          quantity: Joi.number().integer().min(1).required(),
+        })
+      )
+      .required(),
+  }),
+
   update: Joi.object().keys({
     paymentStatus: Joi.string().valid(
       PaymentStatus.PAID,
@@ -34,10 +46,12 @@ export default {
     ),
 
     status: Joi.string().valid(
-      OrderStatus.PENDING,
       OrderStatus.DELIVERED,
       OrderStatus.SHIPPED,
-      OrderStatus.COMPLETED
+      OrderStatus.PENDING,
+      OrderStatus.ACCEPTED,
+      OrderStatus.COMPLETED,
+      OrderStatus.CANCELED
     ),
   }),
 };
