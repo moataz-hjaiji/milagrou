@@ -19,8 +19,15 @@ router.route('/').get(
 
 router.post('/checkout', validator(schema.checkout), orderController.checkout);
 router.post(
+  '/checkout-admin',
+  authentication,
+  validator(schema.checkoutAdmin),
+  orderController.checkout
+);
+
+router.post(
   '/accept/:id',
-  // authentication,
+  authentication,
   validator(schema.acceptOrder),
   orderController.acceptOrder
 );

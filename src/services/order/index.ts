@@ -1,4 +1,5 @@
 import { checkout } from './checkout.service';
+import { checkoutAdmin } from './checkoutAdmin.service';
 import { acceptOrder } from './acceptOrder.service';
 import { getAll } from './getAll.service';
 import { getOne } from './getOne.service';
@@ -7,6 +8,7 @@ import { remove } from './delete.service';
 
 export default {
   checkout,
+  checkoutAdmin,
   acceptOrder,
   getAll,
   getOne,

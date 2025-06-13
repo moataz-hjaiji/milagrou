@@ -34,6 +34,31 @@ export const checkout = asyncHandler(
   }
 );
 
+export const checkoutAdmin = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const {
+      cart,
+      deliveryType,
+      orderType,
+      reservationDate,
+      addressId,
+      code,
+      userId,
+    } = req.body;
+
+    const result = await orderService.checkoutAdmin({
+      cart,
+      userId,
+      deliveryType,
+      orderType,
+      reservationDate,
+      addressId,
+      code,
+    });
+    new SuccessResponse('success', result).send(res);
+  }
+);
+
 export const acceptOrder = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
     const { id } = req.params;

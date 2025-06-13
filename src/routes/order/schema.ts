@@ -26,6 +26,44 @@ export default {
     reservationDate: Joi.date(),
   }),
 
+  checkoutAdmin: Joi.object().keys({
+    userId: JoiObjectId(),
+    deliveryType: Joi.string()
+      .valid(DeliveryType.DELIVERY, DeliveryType.PICKUP)
+      .required(),
+    orderType: Joi.string()
+      .valid(OrderType.GIFT, OrderType.RESERVATION, OrderType.NORMAL)
+      .required(),
+    addressId: JoiObjectId(),
+    code: Joi.string(),
+    reservationDate: Joi.date(),
+    cart: Joi.array()
+      .items(
+        Joi.object({
+          product: Joi.object({
+            _id: JoiObjectId().required(),
+            nameAng: Joi.string().required(),
+            nameAr: Joi.string().required(),
+            descriptionAng: Joi.string().required(),
+            descriptionAr: Joi.string().required(),
+            price: Joi.number().required(),
+            images: Joi.array().items(Joi.string()).required(),
+          }).required(),
+          supplements: Joi.array().items(
+            Joi.object({
+              _id: JoiObjectId().required(),
+              nameAng: Joi.string().required(),
+              nameAr: Joi.string().required(),
+              price: Joi.number().required(),
+            })
+          ),
+          quantity: Joi.number().required(),
+          itemPrice: Joi.number().required(),
+        })
+      )
+      .required(),
+  }),
+
   acceptOrder: Joi.object().keys({
     items: Joi.array()
       .items(
