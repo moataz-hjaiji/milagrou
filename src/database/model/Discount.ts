@@ -1,8 +1,15 @@
-import { model, Schema, Document, ObjectId } from 'mongoose';
+import {
+  model,
+  Schema,
+  Document,
+  ObjectId,
+  AggregatePaginateModel,
+} from 'mongoose';
 import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
 import { CATEGORY_DOCUMENT_NAME } from './Category';
 import { PRODUCT_DOCUMENT_NAME } from './Product';
+import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
 
 export const DISCOUNT_DOCUMENT_NAME = 'Discount';
 const DISCOUNT_COLLECTION_NAME = 'Discounts';
@@ -69,9 +76,9 @@ const schema = new Schema<IDiscount>(
 
 preFindHook(schema);
 schema.plugin(mongoosePagination);
+schema.plugin(mongooseAggregatePaginate);
 
-export const DiscountModel = model<IDiscount, Pagination<IDiscount>>(
-  DISCOUNT_DOCUMENT_NAME,
-  schema,
-  DISCOUNT_COLLECTION_NAME
-);
+export const DiscountModel = model<
+  IDiscount,
+  Pagination<IDiscount> & AggregatePaginateModel<IDiscount>
+>(DISCOUNT_DOCUMENT_NAME, schema, DISCOUNT_COLLECTION_NAME);
