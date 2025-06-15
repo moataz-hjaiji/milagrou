@@ -27,7 +27,7 @@ export const totalOrders = async ({
   if (types)
     aggregationOptions.push({
       $match: {
-        status: {
+        orderType: {
           $in: types,
         },
       },

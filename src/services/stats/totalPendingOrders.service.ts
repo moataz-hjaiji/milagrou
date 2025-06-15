@@ -10,6 +10,7 @@ export const totalPendingOrders = async ({
   let aggregationOptions: any = [
     {
       $match: {
+        status: OrderStatus.PENDING,
         createdAt: {
           $gte: startDate,
           $lte: endDate,
@@ -27,7 +28,7 @@ export const totalPendingOrders = async ({
   if (types)
     aggregationOptions.push({
       $match: {
-        status: {
+        orderType: {
           $in: types,
         },
       },

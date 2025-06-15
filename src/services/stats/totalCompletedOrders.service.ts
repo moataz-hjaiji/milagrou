@@ -10,6 +10,7 @@ export const totalCompeletedOrders = async ({
   let aggregationOptions: any = [
     {
       $match: {
+        status: OrderStatus.COMPLETED,
         createdAt: {
           $gte: startDate,
           $lte: endDate,
@@ -28,7 +29,7 @@ export const totalCompeletedOrders = async ({
   if (types)
     aggregationOptions.push({
       $match: {
-        status: {
+        orderType: {
           $in: types,
         },
       },
