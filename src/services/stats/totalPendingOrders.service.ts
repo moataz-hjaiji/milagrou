@@ -5,11 +5,11 @@ import { statsParams } from './stats.service';
 export const totalPendingOrders = async ({
   startDate,
   endDate,
+  types,
 }: statsParams) => {
-  const result = await OrderRepo.aggregate([
+  let aggregationOptions: any = [
     {
       $match: {
-        status: OrderStatus.PENDING,
         createdAt: {
           $gte: startDate,
           $lte: endDate,
@@ -23,7 +23,17 @@ export const totalPendingOrders = async ({
         totalPendingOrders: { $sum: 1 },
       },
     },
-  ]);
+  ];
+  if (types)
+    aggregationOptions.push({
+      $match: {
+        status: {
+          $in: types,
+        },
+      },
+    });
+
+  const result = await OrderRepo.aggregate(aggregationOptions);
 
   if (result.length === 0) {
     return {

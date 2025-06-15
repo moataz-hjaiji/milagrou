@@ -2,8 +2,12 @@ import { PaymentStatus } from '../../database/model/Order';
 import OrderRepo from '../../database/repository/OrderRepo';
 import { statsParams } from './stats.service';
 
-export const totalRevenue = async ({ startDate, endDate }: statsParams) => {
-  const result = await OrderRepo.aggregate([
+export const totalRevenue = async ({
+  startDate,
+  endDate,
+  types,
+}: statsParams) => {
+  let aggregationOptions: any = [
     {
       $match: {
         paymentStatus: PaymentStatus.PAID,
@@ -22,7 +26,18 @@ export const totalRevenue = async ({ startDate, endDate }: statsParams) => {
         },
       },
     },
-  ]);
+  ];
+
+  if (types)
+    aggregationOptions.push({
+      $match: {
+        status: {
+          $in: types,
+        },
+      },
+    });
+
+  const result = await OrderRepo.aggregate(aggregationOptions);
 
   if (result.length === 0) {
     return {

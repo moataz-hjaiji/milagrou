@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import { escapeRegExp } from 'lodash';
 
 class APIFeatures {
   query: any;
@@ -73,7 +74,7 @@ class APIFeatures {
         } else if (typeof value === 'object' && value.$gte && value.$lte) {
           return { [field]: value };
         } else {
-          return { [field]: { $regex: value, $options: 'i' } };
+          return { [field]: { $regex: escapeRegExp(value), $options: 'i' } };
         }
       });
 

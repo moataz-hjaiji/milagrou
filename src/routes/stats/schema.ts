@@ -9,5 +9,6 @@ export default {
   dateRange: Joi.object().keys({
     startDate: Joi.date().required(),
     endDate: Joi.date().min(Joi.ref('startDate')).required(),
+    types: Joi.array().items(Joi.string()),
   }),
 };

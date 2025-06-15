@@ -1,8 +1,12 @@
 import OrderRepo from '../../database/repository/OrderRepo';
 import { statsParams } from './stats.service';
 
-export const totalOrders = async ({ startDate, endDate }: statsParams) => {
-  const result = await OrderRepo.aggregate([
+export const totalOrders = async ({
+  startDate,
+  endDate,
+  types,
+}: statsParams) => {
+  let aggregationOptions: any = [
     {
       $match: {
         createdAt: {
@@ -18,7 +22,18 @@ export const totalOrders = async ({ startDate, endDate }: statsParams) => {
         totalOrders: { $sum: 1 },
       },
     },
-  ]);
+  ];
+
+  if (types)
+    aggregationOptions.push({
+      $match: {
+        status: {
+          $in: types,
+        },
+      },
+    });
+
+  const result = await OrderRepo.aggregate(aggregationOptions);
 
   if (result.length === 0) {
     return {

@@ -11,10 +11,10 @@ import {
 
 export const stats = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
-    let { startDate, endDate } = req.body;
+    let { startDate, endDate, types } = req.body;
     startDate = new Date(startDate);
     endDate = new Date(endDate);
-    const result = await statsService.stats({ startDate, endDate });
+    const result = await statsService.stats({ startDate, endDate, types });
     new SuccessResponse('success', result).send(res);
   }
 );

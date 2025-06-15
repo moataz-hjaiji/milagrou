@@ -5,6 +5,8 @@
  *     UpdateArea:
  *       type: object
  *       properties:
+ *         deliveryPrice:
+ *           type: integer
  *         nameAng:
  *           type: string
  *         nameAr:

@@ -6,9 +6,10 @@ import { calculateOrderPrices } from './calculateOrderPrices';
 import { DeliveryType } from '../../database/model/Order';
 import PromoCodeRepo from '../../database/repository/PromoCodeRepo';
 import { DiscountType } from '../../database/model/Discount';
-import DeliveryPriceRepo from '../../database/repository/DeliveryPriceRepo';
 import UserRepo from '../../database/repository/UserRepo';
 import { createInvoice } from '../../helpers/paymentGateway/methods';
+import AddressRepo from '../../database/repository/AddressRepo';
+import IArea from '../../database/model/Area';
 
 interface checkoutParams {
   userId: ObjectId;
@@ -104,16 +105,11 @@ export const checkout = async ({
     let orderPrice = orderPriceWithoutDeliveryPrice;
 
     if (deliveryType === DeliveryType.DELIVERY) {
-      const deliveryPrice = await DeliveryPriceRepo.findByObj({
-        isActive: true,
+      const address = await AddressRepo.findById(addressId!, {
+        populate: 'areaId',
       });
-      if (!deliveryPrice) throw new NotFoundError('deliveryPrice not found');
-      if (
-        deliveryPrice.freeDeliveryOption === false ||
-        (deliveryPrice.freeDeliveryOption === true &&
-          deliveryPrice.freeAfter! <= orderPrice)
-      )
-        orderPrice += deliveryPrice.price;
+      if (!address) throw new NotFoundError('address not found');
+      orderPrice += (address.areaId as IArea).deliveryPrice;
     }
 
     const orderNewIdCheck = await OrderRepo.getLastNewId();
@@ -224,16 +220,11 @@ export const checkout = async ({
     let orderPrice = orderPriceWithoutDeliveryPrice;
 
     if (deliveryType === DeliveryType.DELIVERY) {
-      const deliveryPrice = await DeliveryPriceRepo.findByObj({
-        isActive: true,
+      const address = await AddressRepo.findById(addressId!, {
+        populate: 'areaId',
       });
-      if (!deliveryPrice) throw new NotFoundError('deliveryPrice not found');
-      if (
-        deliveryPrice.freeDeliveryOption === false ||
-        (deliveryPrice.freeDeliveryOption === true &&
-          deliveryPrice.freeAfter! <= orderPrice)
-      )
-        orderPrice += deliveryPrice.price;
+      if (!address) throw new NotFoundError('address not found');
+      orderPrice += (address.areaId as IArea).deliveryPrice;
     }
 
     const orderNewIdCheck = await OrderRepo.getLastNewId();

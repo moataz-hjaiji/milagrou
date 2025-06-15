@@ -7,6 +7,7 @@ export const AREA_DOCUMENT_NAME = 'Area';
 const AREA_COLLECTION_NAME = 'Areas';
 
 export default interface IArea extends Document {
+  deliveryPrice: number;
   governorateId: IGovernorate | ObjectId;
   nameAng: string;
   nameAr: string;
@@ -15,6 +16,9 @@ export default interface IArea extends Document {
 
 const schema = new Schema<IArea>(
   {
+    deliveryPrice: {
+      type: Schema.Types.Number,
+    },
     nameAng: {
       type: Schema.Types.String,
     },

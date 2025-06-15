@@ -9,7 +9,7 @@ import { ACTIONS } from '../../helpers/seeder/seed.permission';
 
 const router = express.Router();
 
-router.use('/', authentication);
+// router.use('/', authentication);
 
 router
   .route('/')
@@ -37,6 +37,7 @@ router
     authentication,
     // assignAction({ action: ACTIONS.update, entity: 'Rating' }),
     // authorization,
+    authentication,
     validator(schema.param, ValidationSource.PARAM),
     validator(schema.update),
     ratingController.update
@@ -44,6 +45,7 @@ router
   .delete(
     // assignAction({ action: ACTIONS.delete, entity: 'Rating' }),
     // authorization,
+    authentication,
     validator(schema.param, ValidationSource.PARAM),
     ratingController.remove
   );

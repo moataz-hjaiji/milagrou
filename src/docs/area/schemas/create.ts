@@ -5,10 +5,13 @@
  *     CreateArea:
  *       type: object
  *       required:
+ *         - deliveryPrice
  *         - nameAng
  *         - nameAr
  *         - governorateId
  *       properties:
+ *         deliveryPrice:
+ *           type: integer
  *         nameAng:
  *           type: string
  *         nameAr:
