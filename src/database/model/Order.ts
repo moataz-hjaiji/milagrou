@@ -93,6 +93,11 @@ const schema = new Schema<IOrder>(
           price: { type: Number },
           images: [{ type: String }],
         },
+        store: {
+          _id: { type: Schema.Types.ObjectId },
+          nameAng: { type: String },
+          nameAr: { type: String },
+        },
         supplements: [
           {
             _id: { type: Schema.Types.ObjectId },

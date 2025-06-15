@@ -67,11 +67,11 @@ interface AuthProviderConfig {
   google: {
     clientId: string;
   };
-  whatsapp: {
-    accountSid: string;
-    authToken: string;
-    verifyServiceSid: string;
-  };
+  // whatsapp: {
+  //   accountSid: string;
+  //   authToken: string;
+  //   verifyServiceSid: string;
+  // };
 }
 
 interface GoogleCredentials {
@@ -141,7 +141,9 @@ class GoogleAuthProvider {
     try {
       const ticket = await this.client.verifyIdToken({
         idToken: idToken,
-        audience: process.env.GOOGLE_CLIENT_ID as string,
+        // audience: process.env.GOOGLE_CLIENT_ID as string,
+        audience:
+          '389740496236-9rdqer94cfhna66iqepfkarkd25akej3.apps.googleusercontent.com',
       });
 
       const payload = ticket.getPayload();
@@ -496,17 +498,17 @@ class WhatsAppAuthProvider {
 // Unified Auth Provider Manager
 class AuthProviderManager {
   private google: GoogleAuthProvider;
-  private apple: AppleAuthProvider;
-  private whatsapp: WhatsAppAuthProvider;
+  // private apple: AppleAuthProvider;
+  // private whatsapp: WhatsAppAuthProvider;
 
   constructor(config: AuthProviderConfig) {
     this.google = new GoogleAuthProvider(config.google.clientId);
-    this.apple = new AppleAuthProvider();
-    this.whatsapp = new WhatsAppAuthProvider(
-      config.whatsapp.accountSid,
-      config.whatsapp.authToken,
-      config.whatsapp.verifyServiceSid
-    );
+    // this.apple = new AppleAuthProvider();
+    // this.whatsapp = new WhatsAppAuthProvider(
+    //   config.whatsapp.accountSid,
+    //   config.whatsapp.authToken,
+    //   config.whatsapp.verifyServiceSid
+    // );
   }
 
   // Normalize user data from any provider
@@ -588,33 +590,33 @@ class AuthProviderManager {
           break;
         }
 
-        case 'apple': {
-          const appleCreds = credentials as AppleCredentials;
-          if (appleCreds.idToken) {
-            providerData = await this.apple.verifyAppleToken(
-              appleCreds.idToken,
-              appleCreds.clientId
-            );
-          } else {
-            throw new Error('Apple credentials missing: idToken required');
-          }
-          break;
-        }
+        // case 'apple': {
+        //   const appleCreds = credentials as AppleCredentials;
+        //   if (appleCreds.idToken) {
+        //     providerData = await this.apple.verifyAppleToken(
+        //       appleCreds.idToken,
+        //       appleCreds.clientId
+        //     );
+        //   } else {
+        //     throw new Error('Apple credentials missing: idToken required');
+        //   }
+        //   break;
+        // }
 
-        case 'whatsapp': {
-          const whatsappCreds = credentials as WhatsAppCredentials;
-          if (whatsappCreds.phoneNumber && whatsappCreds.code) {
-            providerData = await this.whatsapp.verifyCodeAndGetUserData(
-              whatsappCreds.phoneNumber,
-              whatsappCreds.code
-            );
-          } else {
-            throw new Error(
-              'WhatsApp credentials missing: phoneNumber and code required'
-            );
-          }
-          break;
-        }
+        // case 'whatsapp': {
+        //   const whatsappCreds = credentials as WhatsAppCredentials;
+        //   if (whatsappCreds.phoneNumber && whatsappCreds.code) {
+        //     providerData = await this.whatsapp.verifyCodeAndGetUserData(
+        //       whatsappCreds.phoneNumber,
+        //       whatsappCreds.code
+        //     );
+        //   } else {
+        //     throw new Error(
+        //       'WhatsApp credentials missing: phoneNumber and code required'
+        //     );
+        //   }
+        //   break;
+        // }
 
         default:
           throw new Error(`Unsupported provider: ${provider}`);
@@ -627,19 +629,19 @@ class AuthProviderManager {
     }
   }
 
-  // Additional helper methods
-  async sendWhatsAppVerification(
-    phoneNumber: string
-  ): Promise<WhatsAppVerificationResponse> {
-    return this.whatsapp.sendVerificationCode(phoneNumber);
-  }
+  // // Additional helper methods
+  // async sendWhatsAppVerification(
+  //   phoneNumber: string
+  // ): Promise<WhatsAppVerificationResponse> {
+  //   return this.whatsapp.sendVerificationCode(phoneNumber);
+  // }
 
-  async parseAppleUserData(
-    identityToken: string,
-    user?: string | AppleUserInfo
-  ): Promise<AppleUserData> {
-    return this.apple.parseAppleUserData(identityToken, user);
-  }
+  // async parseAppleUserData(
+  //   identityToken: string,
+  //   user?: string | AppleUserInfo
+  // ): Promise<AppleUserData> {
+  //   return this.apple.parseAppleUserData(identityToken, user);
+  // }
 }
 
 // Export everything
@@ -660,5 +662,3 @@ export {
   type AppleUserInfo,
   type WhatsAppVerificationResponse,
 };
-
-

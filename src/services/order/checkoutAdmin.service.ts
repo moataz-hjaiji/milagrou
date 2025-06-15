@@ -71,7 +71,7 @@ export const checkoutAdmin = async ({
     }
     orderPriceWithoutDeliveryPrice = Math.max(
       0,
-      orderPriceWithoutDeliveryPrice
+      Number(orderPriceWithoutDeliveryPrice.toFixed(3))
     );
     promoCode = promo;
   }

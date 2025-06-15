@@ -66,6 +66,8 @@ router.post(
   authController.resendForgetPassword
 );
 
+router.post('/login/google', authController.authProvider);
+
 router.use('/', authentication);
 
 router.post(

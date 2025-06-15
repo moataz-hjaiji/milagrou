@@ -10,6 +10,7 @@ import { forgetPassword } from './forgetPassword.service';
 import { verifyCodeForgetPasword } from './verifyCodeForgetPasword.service';
 import { resendForgetPassword } from './resendForgetPassword.service';
 import { resetPassword } from './resetPassword.service';
+import { authProvider } from './authProvider.service';
 
 export default {
   loginUser,
@@ -24,4 +25,5 @@ export default {
   verifyCodeForgetPasword,
   resendForgetPassword,
   resetPassword,
+  authProvider,
 };

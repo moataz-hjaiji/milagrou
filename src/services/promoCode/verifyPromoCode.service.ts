@@ -85,7 +85,7 @@ export const verifyPromoCode = async ({
     priceAfterPromoCode = totalCartPrice - promoCode.amount;
   }
 
-  priceAfterPromoCode = Math.max(0, priceAfterPromoCode);
+  priceAfterPromoCode = Math.max(0, Number(priceAfterPromoCode.toFixed(3)));
 
   result.totalCartPrice = totalCartPrice;
   result.priceAfterPromoCode = priceAfterPromoCode;

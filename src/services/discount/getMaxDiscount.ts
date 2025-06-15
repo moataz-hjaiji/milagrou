@@ -45,7 +45,7 @@ const calculateMaxDiscount = (product: any, discounts: any) => {
     }
   });
 
-  return Number(finalPrice.toFixed(2));
+  return Number(finalPrice.toFixed(3));
 };
 
 export async function getMaxDiscountedPrice(product: IProduct) {

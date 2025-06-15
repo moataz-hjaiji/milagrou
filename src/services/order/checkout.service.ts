@@ -97,7 +97,7 @@ export const checkout = async ({
       }
       orderPriceWithoutDeliveryPrice = Math.max(
         0,
-        orderPriceWithoutDeliveryPrice
+        Number(orderPriceWithoutDeliveryPrice.toFixed(3))
       );
       promoCode = promo;
     }
@@ -212,7 +212,7 @@ export const checkout = async ({
       }
       orderPriceWithoutDeliveryPrice = Math.max(
         0,
-        orderPriceWithoutDeliveryPrice
+        Number(orderPriceWithoutDeliveryPrice.toFixed(3))
       );
       promoCode = promo;
     }

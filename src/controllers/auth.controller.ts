@@ -130,3 +130,11 @@ export const resetPassword = asyncHandler(
     new SuccessResponse('Password reset success', result).send(res);
   }
 );
+
+export const authProvider = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { idToken } = req.body;
+    const result = await authService.authProvider(idToken);
+    new SuccessResponse('Login Success', result).send(res);
+  }
+);
