@@ -27,7 +27,7 @@ router.post(
 
 router.post(
   '/accept/:id',
-  authentication,
+  // authentication,
   validator(schema.acceptOrder),
   orderController.acceptOrder
 );
