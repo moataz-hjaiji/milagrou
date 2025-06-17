@@ -67,11 +67,11 @@ interface AuthProviderConfig {
   google: {
     clientId: string;
   };
-  // whatsapp: {
-  //   accountSid: string;
-  //   authToken: string;
-  //   verifyServiceSid: string;
-  // };
+  whatsapp: {
+    accountSid: string;
+    authToken: string;
+    verifyServiceSid: string;
+  };
 }
 
 interface GoogleCredentials {
@@ -499,16 +499,16 @@ class WhatsAppAuthProvider {
 class AuthProviderManager {
   private google: GoogleAuthProvider;
   // private apple: AppleAuthProvider;
-  // private whatsapp: WhatsAppAuthProvider;
+  private whatsapp: WhatsAppAuthProvider;
 
   constructor(config: AuthProviderConfig) {
     this.google = new GoogleAuthProvider(config.google.clientId);
     // this.apple = new AppleAuthProvider();
-    // this.whatsapp = new WhatsAppAuthProvider(
-    //   config.whatsapp.accountSid,
-    //   config.whatsapp.authToken,
-    //   config.whatsapp.verifyServiceSid
-    // );
+    this.whatsapp = new WhatsAppAuthProvider(
+      config.whatsapp.accountSid,
+      config.whatsapp.authToken,
+      config.whatsapp.verifyServiceSid
+    );
   }
 
   // Normalize user data from any provider
@@ -603,20 +603,20 @@ class AuthProviderManager {
         //   break;
         // }
 
-        // case 'whatsapp': {
-        //   const whatsappCreds = credentials as WhatsAppCredentials;
-        //   if (whatsappCreds.phoneNumber && whatsappCreds.code) {
-        //     providerData = await this.whatsapp.verifyCodeAndGetUserData(
-        //       whatsappCreds.phoneNumber,
-        //       whatsappCreds.code
-        //     );
-        //   } else {
-        //     throw new Error(
-        //       'WhatsApp credentials missing: phoneNumber and code required'
-        //     );
-        //   }
-        //   break;
-        // }
+        case 'whatsapp': {
+          const whatsappCreds = credentials as WhatsAppCredentials;
+          if (whatsappCreds.phoneNumber && whatsappCreds.code) {
+            providerData = await this.whatsapp.verifyCodeAndGetUserData(
+              whatsappCreds.phoneNumber,
+              whatsappCreds.code
+            );
+          } else {
+            throw new Error(
+              'WhatsApp credentials missing: phoneNumber and code required'
+            );
+          }
+          break;
+        }
 
         default:
           throw new Error(`Unsupported provider: ${provider}`);
@@ -629,12 +629,12 @@ class AuthProviderManager {
     }
   }
 
-  // // Additional helper methods
-  // async sendWhatsAppVerification(
-  //   phoneNumber: string
-  // ): Promise<WhatsAppVerificationResponse> {
-  //   return this.whatsapp.sendVerificationCode(phoneNumber);
-  // }
+  // Additional helper methods
+  async sendWhatsAppVerification(
+    phoneNumber: string
+  ): Promise<WhatsAppVerificationResponse> {
+    return this.whatsapp.sendVerificationCode(phoneNumber);
+  }
 
   // async parseAppleUserData(
   //   identityToken: string,

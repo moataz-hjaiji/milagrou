@@ -9,4 +9,9 @@ export default {
   InvoiceStatus: Joi.object().keys({
     invoiceId: Joi.string().required(),
   }),
+
+  invoiceRefund: Joi.object().keys({
+    invoiceId: Joi.string().required(),
+    Amount: Joi.number().required(),
+  }),
 };

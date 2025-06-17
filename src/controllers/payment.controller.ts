@@ -11,8 +11,7 @@ import {
 
 export const webhook = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
-    const result = await paymentService.webhook(req);
-    new SuccessResponse('success', result).send(res);
+    await paymentService.webhook(req);
   }
 );
 
@@ -20,6 +19,14 @@ export const InvoiceStatus = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
     const { invoiceId } = req.body;
     const result = await paymentService.InvoiceStatus(invoiceId);
+    new SuccessResponse('success', result).send(res);
+  }
+);
+
+export const invoiceRefund = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { invoiceId, Amount } = req.body;
+    const result = await paymentService.invoiceRefund({ invoiceId, Amount });
     new SuccessResponse('success', result).send(res);
   }
 );

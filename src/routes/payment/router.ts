@@ -19,12 +19,20 @@ router.route('/webhook').post(
   paymentController.webhook
 );
 
-router.route('/').post(
+router.route('/status').post(
   // assignAction({ action: ACTIONS.create, entity: 'Area' }),
   // authorization,
   // authentication,
   validator(schema.InvoiceStatus),
   paymentController.InvoiceStatus
+);
+
+router.route('/refund').post(
+  // assignAction({ action: ACTIONS.create, entity: 'Area' }),
+  // authorization,
+  // authentication,
+  validator(schema.invoiceRefund),
+  paymentController.invoiceRefund
 );
 
 export default router;

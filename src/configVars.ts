@@ -62,6 +62,7 @@ export const NotificationConfig = {
 export const twilioSettings = {
   accountSid: process.env.ACCOUNT_SID,
   authToken: process.env.AUTH_TOKEN,
+  verifySid: process.env.VERIFY_SERVICE_SID,
   phoneNumber: process.env.PHONE_NUMBER,
 };
 

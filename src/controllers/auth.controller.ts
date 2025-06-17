@@ -131,10 +131,24 @@ export const resetPassword = asyncHandler(
   }
 );
 
-export const authProvider = asyncHandler(
+export const googleAuthProvider = asyncHandler(
   async (req: Request, res: Response) => {
     const { idToken } = req.body;
-    const result = await authService.authProvider(idToken);
+    const result = await authService.googleAuthProvider(idToken);
+    new SuccessResponse('Login Success', result).send(res);
+  }
+);
+
+export const whatsappAuthPrividerSendVerification = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await authService.whatsappAuthPrividerSendVerification();
+    new SuccessResponse('Login Success', result).send(res);
+  }
+);
+
+export const whatsappAuthPrividerVerify = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await authService.whatsappAuthPrividerVerify();
     new SuccessResponse('Login Success', result).send(res);
   }
 );

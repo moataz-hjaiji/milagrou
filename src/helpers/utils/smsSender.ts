@@ -13,7 +13,7 @@ export const sendTwilioMessage = async (messageSettings: MessageSettings) => {
   const messageCreateOptions: any = {
     body: messageSettings.body,
     from: phoneNumber,
-    to: messageSettings.to,
+    to: `whatsapp:${messageSettings.to}`,
   };
 
   await client.messages

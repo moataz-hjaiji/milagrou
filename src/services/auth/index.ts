@@ -10,7 +10,9 @@ import { forgetPassword } from './forgetPassword.service';
 import { verifyCodeForgetPasword } from './verifyCodeForgetPasword.service';
 import { resendForgetPassword } from './resendForgetPassword.service';
 import { resetPassword } from './resetPassword.service';
-import { authProvider } from './authProvider.service';
+import { googleAuthProvider } from './googleAuthProvider.service';
+import { whatsappAuthPrividerSendVerification } from './whatsappAuthPrividerSendVerification.service';
+import { whatsappAuthPrividerVerify } from './whatsappAuthPrividerVerify.service';
 
 export default {
   loginUser,
@@ -25,5 +27,7 @@ export default {
   verifyCodeForgetPasword,
   resendForgetPassword,
   resetPassword,
-  authProvider,
+  googleAuthProvider,
+  whatsappAuthPrividerSendVerification,
+  whatsappAuthPrividerVerify,
 };

@@ -5,23 +5,23 @@ import twilio from 'twilio';
 import UserRepo from '../../database/repository/UserRepo';
 import { BadRequestError, NotFoundError } from '../../core/ApiError';
 import { AuthProviderManager } from './signinWithProvider.service';
-import { authProviders } from '../../configVars';
+import { authProviders, twilioSettings } from '../../configVars';
 import RoleRepo from '../../database/repository/RoleRepo';
 import { generateKeys } from '../../helpers/utils/auth';
 import KeystoreRepo from '../../database/repository/KeystoreRepo';
 import { createTokens } from '../../authUtils/authUtils';
 
-export const authProvider = async (idToken: string) => {
+export const googleAuthProvider = async (idToken: string) => {
   // Initialize the manager
   const authManager = new AuthProviderManager({
     google: {
       clientId: authProviders.googleClientId!,
     },
-    // whatsapp: {
-    //   accountSid: process.env.TWILIO_ACCOUNT_SID!,
-    //   authToken: process.env.TWILIO_AUTH_TOKEN!,
-    //   verifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID!,
-    // },
+    whatsapp: {
+      accountSid: twilioSettings.accountSid!,
+      authToken: twilioSettings.authToken!,
+      verifyServiceSid: twilioSettings.verifySid!,
+    },
   });
 
   // Get Google user data
@@ -81,14 +81,15 @@ export const authProvider = async (idToken: string) => {
   //   clientId: process.env.APPLE_CLIENT_ID!,
   // });
 
-  // // Get WhatsApp user data
-  // const whatsappUser = await authManager.getUserData('whatsapp', {
-  //   phoneNumber: '+1234567890',
-  //   code: '123456'
-  // });
+  // Get WhatsApp user data
+  const whatsappUser = await authManager.getUserData('whatsapp', {
+    phoneNumber: '+1234567890',
+    code: '123456',
+  });
 
-  // // Send WhatsApp verification
-  // const verificationResponse = await authManager.sendWhatsAppVerification('+1234567890');
+  // Send WhatsApp verification
+  const verificationResponse =
+    await authManager.sendWhatsAppVerification('+1234567890');
 
   // All return normalized data structure:
   // {

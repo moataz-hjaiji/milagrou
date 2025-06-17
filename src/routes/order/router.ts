@@ -22,7 +22,7 @@ router.post(
   '/checkout-admin',
   authentication,
   validator(schema.checkoutAdmin),
-  orderController.checkout
+  orderController.checkoutAdmin
 );
 
 router.post(

@@ -3,6 +3,7 @@ import { mongoosePagination, Pagination } from 'mongoose-paginate-ts';
 import { preFindHook } from '../../helpers/utils/databaseHooks';
 import { CATEGORY_DOCUMENT_NAME } from './Category';
 import { PRODUCT_DOCUMENT_NAME } from './Product';
+import { USER_DOCUMENT_NAME } from './User';
 
 export const POPUP_DOCUMENT_NAME = 'Popup';
 const POPUP_COLLECTION_NAME = 'Popups';
@@ -13,6 +14,8 @@ interface ITarget {
 }
 
 export default interface IPopup extends Document {
+  users: ObjectId[];
+  browserIds: string[];
   titleAng: string;
   titleAr: string;
   descriptionAng: string;
@@ -29,6 +32,17 @@ export default interface IPopup extends Document {
 
 const schema = new Schema<IPopup>(
   {
+    users: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: () => USER_DOCUMENT_NAME,
+      },
+    ],
+    browserIds: [
+      {
+        type: Schema.Types.String,
+      },
+    ],
     titleAng: {
       type: Schema.Types.String,
     },

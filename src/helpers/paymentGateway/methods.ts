@@ -68,3 +68,33 @@ export const getInvoiceStatus = async (Key: string) => {
     throw new Error(error);
   }
 };
+
+export const refundInvoice = async ({ Key, Amount }: any) => {
+  try {
+    const url = baseURL + '/v2/MakeRefund';
+
+    const headers = {
+      Accept: 'application/json',
+      Authorization: 'Bearer ' + token,
+      'Content-Type': 'application/json',
+    };
+
+    const data = {
+      Key,
+      KeyType: 'invoiceid',
+      Amount,
+    };
+
+    const result = await axios({
+      method: 'post',
+      url,
+      data,
+      headers,
+    });
+
+    return result.data;
+  } catch (error: any) {
+    console.log(error.response.data);
+    throw new Error(error);
+  }
+};

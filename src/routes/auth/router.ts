@@ -66,7 +66,16 @@ router.post(
   authController.resendForgetPassword
 );
 
-router.post('/login/google', authController.authProvider);
+router.post('/login/google', authController.googleAuthProvider);
+
+router.post(
+  '/login/whatsapp/send-verification',
+  authController.whatsappAuthPrividerSendVerification
+);
+router.post(
+  '/login/whatsapp/verify',
+  authController.whatsappAuthPrividerVerify
+);
 
 router.use('/', authentication);
 

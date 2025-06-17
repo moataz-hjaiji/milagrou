@@ -24,6 +24,8 @@ router
   )
   .get(popupController.getAll);
 
+router.route('/mark-seen').post(popupController.markAsSeen);
+
 router
   .route('/:id')
   .get(validator(schema.param, ValidationSource.PARAM), popupController.getOne)

@@ -55,3 +55,12 @@ export const remove = asyncHandler(
     new SuccessMsgResponse('Popup Deleted').send(res);
   }
 );
+
+export const markAsSeen = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { id } = req.params;
+    const { userId, browserId } = req.body;
+    const result = await popupService.markAsSeen(id, userId, browserId);
+    new SuccessResponse('Popup returned', result).send(res);
+  }
+);
