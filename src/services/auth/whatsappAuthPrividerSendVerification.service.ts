@@ -10,6 +10,10 @@ import RoleRepo from '../../database/repository/RoleRepo';
 import { generateKeys } from '../../helpers/utils/auth';
 import KeystoreRepo from '../../database/repository/KeystoreRepo';
 import { createTokens } from '../../authUtils/authUtils';
+import {
+  MessageSettings,
+  sendTwilioMessage,
+} from '../../helpers/utils/smsSender';
 
 export const whatsappAuthPrividerSendVerification = async () => {
   // Initialize the manager
@@ -25,8 +29,24 @@ export const whatsappAuthPrividerSendVerification = async () => {
   });
 
   // Send WhatsApp verification
-  const verificationResponse =
-    await authManager.sendWhatsAppVerification('+21654867711');
+  // const verificationResponse =
+  //   await authManager.sendWhatsAppVerification('+21654867711');
 
-  return verificationResponse;
+  // const messageSettings: MessageSettings = {
+  //   bodyParams: ['123456'],
+  //   to: '+21654867711',
+  // };
+  // sendTwilioMessage(messageSettings);
+
+  await sendTwilioMessage({
+    to: '+21654867711',
+
+    // messagingServiceSid: 'MGXXXXXXXXXXXXXXXXXXXXXXXXX',
+    contentSid: 'HXba095bd6781b23e3e3c89a8ac0fb68c3',
+    variables: {
+      '1': '123456',
+    },
+  });
+
+  // return verificationResponse;
 };

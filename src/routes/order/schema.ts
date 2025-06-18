@@ -58,7 +58,6 @@ export default {
             })
           ),
           quantity: Joi.number().required(),
-          itemPrice: Joi.number().required(),
         })
       )
       .required(),

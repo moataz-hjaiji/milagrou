@@ -30,7 +30,7 @@ export const checkoutAdmin = async ({
   addressId,
   code,
 }: checkoutParams) => {
-  const items = await calculateOrderPrices(cart.items.toObject());
+  const items = await calculateOrderPrices(cart);
 
   let orderPriceWithoutDeliveryPrice = items.reduce(
     (sum: any, item: any) => sum + item.itemPrice,

@@ -24,6 +24,14 @@ export const totalPendingOrders = async ({
         totalPendingOrders: { $sum: 1 },
       },
     },
+    {
+      $group: {
+        _id: null,
+        totalRevenue: {
+          $sum: '$orderPriceWithoutDeliveryPrice',
+        },
+      },
+    },
   ];
   if (types)
     aggregationOptions.push({
@@ -39,10 +47,12 @@ export const totalPendingOrders = async ({
   if (result.length === 0) {
     return {
       totalPendingOrders: 0,
+      totalRevenue: 0,
     };
   }
 
   return {
     totalPendingOrders: result[0].totalPendingOrders,
+    totalRevenue: result[0].totalRevenue,
   };
 };

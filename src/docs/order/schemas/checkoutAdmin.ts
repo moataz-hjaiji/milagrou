@@ -82,6 +82,4 @@
  *                       type: number
  *               quantity:
  *                 type: number
- *               itemPrice:
- *                 type: number
  */

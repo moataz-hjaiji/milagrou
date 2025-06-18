@@ -32,9 +32,9 @@ export const registerPhone = async (phoneNumber: string) => {
 
   const message = `Your verification code is:${randomCode}`;
 
-  const messageSettings: MessageSettings = {
-    body: message,
-    to: phoneNumber,
-  };
-  sendTwilioMessage(messageSettings);
+  // const messageSettings: MessageSettings = {
+  //   body: message,
+  //   to: phoneNumber,
+  // };
+  // sendTwilioMessage(messageSettings);
 };

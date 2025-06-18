@@ -22,6 +22,14 @@ export const totalOrders = async ({
         totalOrders: { $sum: 1 },
       },
     },
+    {
+      $group: {
+        _id: null,
+        totalRevenue: {
+          $sum: '$orderPriceWithoutDeliveryPrice',
+        },
+      },
+    },
   ];
 
   if (types)
@@ -38,10 +46,12 @@ export const totalOrders = async ({
   if (result.length === 0) {
     return {
       totalOrders: 0,
+      totalRevenue: 0,
     };
   }
 
   return {
     totalOrders: result[0].totalOrders,
+    totalRevenue: result[0].totalRevenue,
   };
 };

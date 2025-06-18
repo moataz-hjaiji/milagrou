@@ -382,6 +382,8 @@ class WhatsAppAuthProvider {
           channel: 'whatsapp',
         });
 
+      console.log(verification);
+
       return {
         success: true,
         sid: verification.sid,
@@ -408,6 +410,8 @@ class WhatsAppAuthProvider {
           to: phoneNumber,
           code: code,
         });
+
+      console.log(verificationCheck);
 
       if (verificationCheck.status !== 'approved') {
         throw new Error('Invalid verification code');
