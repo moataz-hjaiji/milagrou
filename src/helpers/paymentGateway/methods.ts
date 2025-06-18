@@ -22,8 +22,8 @@ export const createInvoice = async ({
       NotificationOption,
       CustomerName,
       InvoiceValue,
-      // CallBackUrl: 'https://youtube.com',
-      // ErrorUrl: 'https://google.com',
+      CallBackUrl: 'https://milagro-shop.netlify.app/?from_payment=success',
+      ErrorUrl: 'https://milagro-shop.netlify.app/?from_payment=failed',
     };
 
     const result = await axios({

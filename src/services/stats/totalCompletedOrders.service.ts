@@ -22,11 +22,6 @@ export const totalCompeletedOrders = async ({
       $group: {
         _id: null,
         totalCompeletedOrders: { $sum: 1 },
-      },
-    },
-    {
-      $group: {
-        _id: null,
         totalRevenue: {
           $sum: '$orderPriceWithoutDeliveryPrice',
         },

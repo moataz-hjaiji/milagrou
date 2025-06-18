@@ -1,7 +1,8 @@
+import { OrderStatus } from '../../database/model/Order';
 import OrderRepo from '../../database/repository/OrderRepo';
 import { statsParams } from './stats.service';
 
-export const totalOrders = async ({
+export const totalAcceptedOrders = async ({
   startDate,
   endDate,
   types,
@@ -9,6 +10,7 @@ export const totalOrders = async ({
   let aggregationOptions: any = [
     {
       $match: {
+        status: OrderStatus.ACCEPTED,
         createdAt: {
           $gte: startDate,
           $lte: endDate,
@@ -19,7 +21,7 @@ export const totalOrders = async ({
     {
       $group: {
         _id: null,
-        totalOrders: { $sum: 1 },
+        totalAcceptedOrders: { $sum: 1 },
         totalRevenue: {
           $sum: '$orderPriceWithoutDeliveryPrice',
         },
@@ -40,13 +42,13 @@ export const totalOrders = async ({
 
   if (result.length === 0) {
     return {
-      totalOrders: 0,
+      totalAcceptedOrders: 0,
       totalRevenue: 0,
     };
   }
 
   return {
-    totalOrders: result[0].totalOrders,
+    totalAcceptedOrders: result[0].totalAcceptedOrders,
     totalRevenue: result[0].totalRevenue,
   };
 };

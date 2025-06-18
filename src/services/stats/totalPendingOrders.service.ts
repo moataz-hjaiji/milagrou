@@ -22,11 +22,6 @@ export const totalPendingOrders = async ({
       $group: {
         _id: null,
         totalPendingOrders: { $sum: 1 },
-      },
-    },
-    {
-      $group: {
-        _id: null,
         totalRevenue: {
           $sum: '$orderPriceWithoutDeliveryPrice',
         },

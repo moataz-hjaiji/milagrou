@@ -9,7 +9,7 @@ import { ACTIONS } from '../../helpers/seeder/seed.permission';
 
 const router = express.Router();
 
-router.use('/', authentication);
+// router.use('/', authentication);
 
 router.route('/').post(
   // assignAction({ action: ACTIONS.list, entity: 'Stats' }),
