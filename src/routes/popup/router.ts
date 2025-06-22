@@ -24,7 +24,7 @@ router
   )
   .get(popupController.getAll);
 
-router.route('/mark-seen').post(popupController.markAsSeen);
+router.route('/mark-seen/:id').post(popupController.markAsSeen);
 
 router
   .route('/:id')
