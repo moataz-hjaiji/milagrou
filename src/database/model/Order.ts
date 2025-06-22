@@ -66,6 +66,9 @@ const schema = new Schema<IOrder>(
     deliveryType: {
       type: Schema.Types.String,
     },
+    orderType: {
+      type: Schema.Types.String,
+    },
     paymentStatus: {
       type: Schema.Types.String,
       default: PaymentStatus.UNPAID,
