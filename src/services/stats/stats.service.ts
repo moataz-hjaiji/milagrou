@@ -4,6 +4,7 @@ import { totalCompeletedOrders } from './totalCompletedOrders.service';
 import { totalPendingOrders } from './totalPendingOrders.service';
 import { totalAcceptedOrders } from './totalAcceptedOrders.service';
 import { todayOrders } from './todayOrders.service';
+import { totalUsers } from './totalUsers.service';
 
 export interface statsParams {
   startDate: Date;
@@ -32,6 +33,7 @@ export const stats = async ({ startDate, endDate, types }: statsParams) => {
   });
 
   const todayOrdersValue = await todayOrders();
+  const totalUsersValue = await totalUsers();
 
   return {
     totalRevenueValue,
@@ -40,5 +42,6 @@ export const stats = async ({ startDate, endDate, types }: statsParams) => {
     totalPendingOrdersValue,
     totalAcceptedOrdersValue,
     todayOrdersValue,
+    totalUsersValue,
   };
 };
