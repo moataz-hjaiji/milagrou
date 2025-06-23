@@ -13,8 +13,6 @@ export const enum OrderStatus {
   ACCEPTED = 'ACCEPTED',
   COMPLETED = 'COMPLETED',
   CANCELED = 'CANCELED',
-  SHIPPED = 'SHIPPED',
-  DELIVERED = 'DELIVERED',
 }
 
 export const enum PaymentStatus {
