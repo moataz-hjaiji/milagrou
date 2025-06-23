@@ -16,7 +16,7 @@ const findAll = async (
   const features = new APIFeatures(findAllQuery, query)
     .filter()
     .sort()
-    .recherche([''])
+    .recherche(['newId'])
     .limitFields()
     .populate();
 

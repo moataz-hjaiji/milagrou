@@ -3,6 +3,7 @@ import { totalOrders } from './totalOrders.service';
 import { totalCompeletedOrders } from './totalCompletedOrders.service';
 import { totalPendingOrders } from './totalPendingOrders.service';
 import { totalAcceptedOrders } from './totalAcceptedOrders.service';
+import { todayOrders } from './todayOrders.service';
 
 export interface statsParams {
   startDate: Date;
@@ -30,11 +31,14 @@ export const stats = async ({ startDate, endDate, types }: statsParams) => {
     types,
   });
 
+  const todayOrdersValue = await todayOrders();
+
   return {
     totalRevenueValue,
     totalOrdersValue,
     totalCompeletedOrdersValue,
     totalPendingOrdersValue,
     totalAcceptedOrdersValue,
+    todayOrdersValue,
   };
 };
