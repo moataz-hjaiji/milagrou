@@ -11,7 +11,7 @@ import { generateKeys } from '../../helpers/utils/auth';
 import KeystoreRepo from '../../database/repository/KeystoreRepo';
 import { createTokens } from '../../authUtils/authUtils';
 import {
-  MessageSettings,
+  // MessageSettings,
   sendTwilioMessage,
 } from '../../helpers/utils/smsSender';
 
@@ -38,15 +38,7 @@ export const whatsappAuthPrividerSendVerification = async () => {
   // };
   // sendTwilioMessage(messageSettings);
 
-  await sendTwilioMessage({
-    to: '+21654867711',
-
-    // messagingServiceSid: 'MGXXXXXXXXXXXXXXXXXXXXXXXXX',
-    contentSid: 'HXba095bd6781b23e3e3c89a8ac0fb68c3',
-    variables: {
-      '1': '123456',
-    },
-  });
+  return await sendTwilioMessage();
 
   // return verificationResponse;
 };

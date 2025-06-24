@@ -83,8 +83,6 @@ export default {
     ),
 
     status: Joi.string().valid(
-      OrderStatus.DELIVERED,
-      OrderStatus.SHIPPED,
       OrderStatus.PENDING,
       OrderStatus.ACCEPTED,
       OrderStatus.COMPLETED,

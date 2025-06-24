@@ -4,7 +4,7 @@ import RoleRepo from '../../database/repository/RoleRepo';
 
 import crypto from 'crypto';
 import {
-  MessageSettings,
+  // MessageSettings,
   sendTwilioMessage,
 } from '../../helpers/utils/smsSender';
 

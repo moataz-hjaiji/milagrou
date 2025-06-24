@@ -2,7 +2,7 @@ import UserRepo from '../../database/repository/UserRepo';
 import { BadRequestError } from '../../core/ApiError';
 import crypto from 'crypto';
 import {
-  MessageSettings,
+  // MessageSettings,
   sendTwilioMessage,
 } from '../../helpers/utils/smsSender';
 
