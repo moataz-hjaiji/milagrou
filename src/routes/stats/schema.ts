@@ -10,5 +10,6 @@ export default {
     startDate: Joi.date().required(),
     endDate: Joi.date().min(Joi.ref('startDate')).required(),
     types: Joi.array().items(Joi.string()),
+    year: Joi.number(),
   }),
 };
