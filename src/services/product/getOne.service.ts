@@ -16,7 +16,7 @@ export const getOne = async (id: string, query: any) => {
     },
   ]);
   const productObject = product.toObject();
-  const priceAfterDiscount = await getMaxDiscountedPrice(productObject);
+  const priceAfterDiscount = await getMaxDiscountedPrice(productObject, false);
   productObject.priceAfterDiscount = priceAfterDiscount;
   return product;
 };

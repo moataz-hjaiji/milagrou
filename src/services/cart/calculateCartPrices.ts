@@ -9,7 +9,7 @@ export async function calculateItemPrices(cartData: any) {
       cartData.items.map(async (item: any) => {
         const product = item.product as IProduct;
         const basePrice = product?.price || 0;
-        const priceAfterDiscount = await getMaxDiscountedPrice(product);
+        const priceAfterDiscount = await getMaxDiscountedPrice(product, false);
 
         const supplementsWithPrice =
           item.supplements?.map((supplement: any) => {

@@ -31,7 +31,7 @@ export const getAll = async (query: any) => {
           product._id.toString()
         );
       }
-      const priceAfterDiscount = await getMaxDiscountedPrice(product);
+      const priceAfterDiscount = await getMaxDiscountedPrice(product, false);
       product.priceAfterDiscount = priceAfterDiscount;
     })
   );

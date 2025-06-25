@@ -89,4 +89,7 @@ export default {
       OrderStatus.CANCELED
     ),
   }),
+  exportData: Joi.object().keys({
+    ids: Joi.array().items(Joi.string()),
+  }),
 };

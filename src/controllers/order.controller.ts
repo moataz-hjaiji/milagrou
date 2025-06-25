@@ -105,3 +105,13 @@ export const remove = asyncHandler(
     new SuccessMsgResponse('Order Deleted').send(res);
   }
 );
+
+export const exportData = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { ids } = req.body;
+    const result = await orderService.exportData(ids);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=orders.csv');
+    res.send(result);
+  }
+);

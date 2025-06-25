@@ -17,6 +17,10 @@ router.route('/').get(
   orderController.getAll
 );
 
+router
+  .route('/export')
+  .post(validator(schema.exportData), orderController.exportData);
+
 router.post('/checkout', validator(schema.checkout), orderController.checkout);
 router.post(
   '/checkout-admin',

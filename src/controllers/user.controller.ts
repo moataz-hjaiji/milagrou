@@ -83,3 +83,13 @@ export const removeMe = asyncHandler(
     new SuccessMsgResponse('User Deleted').send(res);
   }
 );
+
+export const exportData = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { ids } = req.body;
+    const result = await userService.exportData(ids);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=users.csv');
+    res.send(result);
+  }
+);

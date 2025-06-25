@@ -10,6 +10,8 @@ import UserRepo from '../../database/repository/UserRepo';
 import { createInvoice } from '../../helpers/paymentGateway/methods';
 import AddressRepo from '../../database/repository/AddressRepo';
 import IArea from '../../database/model/Area';
+import RoleRepo from '../../database/repository/RoleRepo';
+import { sendNotifUser } from '../../helpers/notif';
 
 interface checkoutParams {
   userId: ObjectId;
@@ -55,7 +57,7 @@ export const checkout = async ({
       },
     ]);
 
-    const items = await calculateOrderPrices(cart.items.toObject());
+    const items = await calculateOrderPrices(cart.items.toObject(), false);
 
     let orderPriceWithoutDeliveryPrice = items.reduce(
       (sum: any, item: any) => sum + item.itemPrice,
@@ -152,6 +154,24 @@ export const checkout = async ({
     cart.items = [];
     await cart.save();
 
+    await calculateOrderPrices(cart.items.toObject(), true);
+
+    const roleAdmin = await RoleRepo.findByCode('admin');
+    const admins = await UserRepo.findAllNotPaginated({
+      roles: roleAdmin!._id,
+    });
+    await Promise.all(
+      admins.map(async (admin) => {
+        await sendNotifUser(admin._id.toString(), {
+          data: {
+            title: 'New Order',
+            body: `New order has been placed.`,
+            orderId: order._id,
+          },
+        });
+      })
+    );
+
     return order;
   } else if (browserId) {
     const cart: any = await CartRepo.findByObj({ browserId });
@@ -178,7 +198,7 @@ export const checkout = async ({
       },
     ]);
 
-    const items = await calculateOrderPrices(cart.items.toObject());
+    const items = await calculateOrderPrices(cart.items.toObject(), false);
 
     let orderPriceWithoutDeliveryPrice = items.reduce(
       (sum: any, item: any) => sum + item.itemPrice,
@@ -263,6 +283,23 @@ export const checkout = async ({
 
     cart.items = [];
     await cart.save();
+    await calculateOrderPrices(cart.items.toObject(), true);
+
+    const roleAdmin = await RoleRepo.findByCode('admin');
+    const admins = await UserRepo.findAllNotPaginated({
+      roles: roleAdmin!._id,
+    });
+    await Promise.all(
+      admins.map(async (admin) => {
+        await sendNotifUser(admin._id.toString(), {
+          data: {
+            title: 'New Order',
+            body: `New order has been placed.`,
+            orderId: order._id,
+          },
+        });
+      })
+    );
 
     return order;
   }

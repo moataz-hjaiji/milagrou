@@ -31,6 +31,8 @@ export default interface IProduct extends Document {
   category: ICategory | ObjectId;
   position?: number;
   stores: IStoreQuantity[];
+  minSupp: number;
+  maxSupp: number;
   supplements: ISupplementPrice[];
   deletedAt?: Date;
 }
@@ -68,6 +70,12 @@ const schema = new Schema<IProduct>(
       type: Schema.Types.String,
     },
     position: {
+      type: Schema.Types.Number,
+    },
+    minSupp: {
+      type: Schema.Types.Number,
+    },
+    maxSupp: {
       type: Schema.Types.Number,
     },
     category: {

@@ -2,12 +2,18 @@ import IProduct from '../../database/model/Product';
 import ISupplement from '../../database/model/Supplement';
 import { getMaxDiscountedPrice } from '../discount/getMaxDiscount';
 
-export async function calculateOrderPrices(items: any) {
+export async function calculateOrderPrices(
+  items: any,
+  updateDiscount: boolean
+) {
   return await Promise.all(
     items.map(async (item: any) => {
       // Get base product price
       const product = item.product as IProduct;
-      const priceAfterDiscount = await getMaxDiscountedPrice(product);
+      const priceAfterDiscount = await getMaxDiscountedPrice(
+        product,
+        updateDiscount
+      );
 
       const supplementsWithPrice =
         item.supplements?.map((supplement: any) => {

@@ -29,4 +29,7 @@ export default {
     firstName: Joi.string().min(3),
     lastName: Joi.string().min(3),
   }),
+  exportData: Joi.object().keys({
+    ids: Joi.array().items(Joi.string()),
+  }),
 };

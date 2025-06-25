@@ -29,6 +29,7 @@ export default interface IDiscount extends Document {
   startDate: Date;
   endDate: Date;
   amount: number;
+  usage: number;
   type: DiscountType;
   isActive: Boolean;
   deletedAt?: Date;
@@ -54,6 +55,10 @@ const schema = new Schema<IDiscount>(
     },
     amount: {
       type: Number,
+    },
+    usage: {
+      type: Number,
+      default: 0,
     },
     type: {
       type: String,

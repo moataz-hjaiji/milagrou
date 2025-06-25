@@ -27,6 +27,10 @@
  *           type: string
  *         position:
  *           type: integer
+ *         minSupp:
+ *           type: integer
+ *         maxSupp:
+ *           type: integer
  *         category:
  *           type: string
  *           format: uuid

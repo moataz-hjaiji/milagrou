@@ -26,7 +26,10 @@ export const getAll = async (query: any) => {
   const favourites = await FavouriteRepo.findAll(options, query);
   await Promise.all(
     favourites.docs.map(async (favourite: any) => {
-      const priceAfterDiscount = await getMaxDiscountedPrice(favourite.product);
+      const priceAfterDiscount = await getMaxDiscountedPrice(
+        favourite.product,
+        false
+      );
       favourite.product.priceAfterDiscount = priceAfterDiscount;
     })
   );

@@ -6,6 +6,8 @@ import update from './update';
 import remove from './remove';
 import getLastNewId from './getLastNewId';
 import aggregate from './aggregate';
+import count from './count';
+import findAllNotPaginated from './findAllNotPaginated';
 
 export default {
   create,
@@ -16,4 +18,6 @@ export default {
   remove,
   getLastNewId,
   aggregate,
+  count,
+  findAllNotPaginated,
 };

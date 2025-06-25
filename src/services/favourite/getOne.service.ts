@@ -22,7 +22,8 @@ export const getOne = async (id: string, query: any) => {
   ]);
   const favouriteObject = favourite.toObject();
   const priceAfterDiscount = await getMaxDiscountedPrice(
-    favouriteObject.product
+    favouriteObject.product,
+    false
   );
   favouriteObject.product.priceAfterDiscount = priceAfterDiscount;
   return favourite;

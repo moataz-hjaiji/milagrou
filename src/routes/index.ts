@@ -21,6 +21,8 @@ import stats from './stats/router';
 import feedbacks from './feedback/router';
 import siteSettings from './siteSetting/router';
 import payments from './payment/router';
+import taxRates from './taxRate/router';
+import notifications from './notification/router';
 
 const router = express.Router();
 
@@ -46,5 +48,7 @@ router.use('/stats', stats);
 router.use('/feedbacks', feedbacks);
 router.use('/site-settings', siteSettings);
 router.use('/payments', payments);
+router.use('/tax-rates', taxRates);
+router.use('/notifications', notifications);
 
 export default router;

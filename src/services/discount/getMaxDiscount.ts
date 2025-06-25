@@ -16,7 +16,11 @@ const extractTargetIds = (product: any): string[] => {
   return Array.from(targetIds);
 };
 
-const calculateMaxDiscount = (product: any, discounts: any) => {
+const calculateMaxDiscount = async (
+  product: any,
+  discounts: any,
+  updateDiscount: boolean
+) => {
   if (!discounts.length) {
     return product?.price;
   }
@@ -24,6 +28,7 @@ const calculateMaxDiscount = (product: any, discounts: any) => {
   const originalPrice = product?.price;
   let maxDiscount = 0;
   let finalPrice = originalPrice;
+  let maxDiscountDocId;
 
   discounts.forEach((discount: any) => {
     let discountedPrice = originalPrice;
@@ -42,13 +47,21 @@ const calculateMaxDiscount = (product: any, discounts: any) => {
     if (originalPrice - discountedPrice > maxDiscount) {
       maxDiscount = originalPrice - discountedPrice;
       finalPrice = discountedPrice;
+      maxDiscountDocId = discount._id;
     }
   });
-
+  if (updateDiscount && maxDiscountDocId) {
+    const discount = await DiscountRepo.findById(maxDiscountDocId);
+    discount!.usage += 1;
+    await discount?.save();
+  }
   return Number(finalPrice.toFixed(3));
 };
 
-export async function getMaxDiscountedPrice(product: IProduct) {
+export async function getMaxDiscountedPrice(
+  product: IProduct,
+  updateDiscount: boolean
+) {
   const targetIds = extractTargetIds(product);
   if (targetIds.length > 0) {
     const currentDate = new Date();
@@ -66,7 +79,7 @@ export async function getMaxDiscountedPrice(product: IProduct) {
       ],
     });
     if (discounts.length > 0)
-      return calculateMaxDiscount(product, discounts) as number;
+      return calculateMaxDiscount(product, discounts, updateDiscount);
     return product.price;
   }
   return product.price;

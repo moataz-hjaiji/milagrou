@@ -30,6 +30,10 @@
  *           type: number
  *         position:
  *           type: integer
+ *         minSupp:
+ *           type: integer
+ *         maxSupp:
+ *           type: integer
  *         images:
  *           type: array
  *           items :

@@ -26,6 +26,8 @@
  *           type: string
  *         amount:
  *           type: number
+ *         usage:
+ *           type: number
  *         type:
  *           type: string
  *           enum:

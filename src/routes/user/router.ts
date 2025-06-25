@@ -40,6 +40,10 @@ router
   .delete(userController.removeMe);
 
 router
+  .route('/export')
+  .post(validator(schema.exportData), userController.exportData);
+
+router
   .route('/:id')
   .get(
     // assignAction({ action: ACTIONS.read, entity: 'User' }),
