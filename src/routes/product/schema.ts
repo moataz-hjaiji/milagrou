@@ -41,6 +41,8 @@ export default {
     isTopSeller: Joi.boolean(),
     price: Joi.number().min(0),
     position: Joi.number().integer().min(0),
+    minSupp: Joi.number().integer(),
+    maxSupp: Joi.number().integer(),
     category: JoiObjectId(),
     stores: Joi.array().items(
       Joi.object({

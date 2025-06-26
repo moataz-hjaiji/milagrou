@@ -18,9 +18,9 @@ export const sendTwilioMessage = async () =>
       const message = await client.messages.create({
         to: 'whatsapp:+21654867711',
         from: `whatsapp:+96560025009`,
-        contentSid: 'HXc55bb436b0f8157851a455716127bda4',
+        contentSid: 'HX3d00adcfeed268a13025018be48efeb2',
         contentVariables: JSON.stringify({
-          1: 'abcdef',
+          1: '123456',
         }),
         // messagingServiceSid: 'MGb45f9459d650d773c31ce5dbb1685092',
         // body: 'hello',
