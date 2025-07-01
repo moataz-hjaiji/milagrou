@@ -14,4 +14,9 @@ export default {
     invoiceId: Joi.string().required(),
     Amount: Joi.number().required(),
   }),
+
+  getPaymentMethods: Joi.object().keys({
+    InvoiceAmount: Joi.number().required(),
+    CurrencyIso: Joi.string().required(),
+  }),
 };

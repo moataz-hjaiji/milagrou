@@ -15,6 +15,8 @@ export default {
   checkout: Joi.object().keys({
     userId: JoiObjectId(),
     browserId: Joi.string(),
+    note: Joi.string(),
+    giftMsg: Joi.string(),
     deliveryType: Joi.string()
       .valid(DeliveryType.DELIVERY, DeliveryType.PICKUP)
       .required(),
@@ -24,10 +26,14 @@ export default {
     addressId: JoiObjectId(),
     code: Joi.string(),
     reservationDate: Joi.date(),
+    InvoicePaymentMethods: Joi.array().items(Joi.number()).required(),
   }),
 
   checkoutAdmin: Joi.object().keys({
     userId: JoiObjectId(),
+    note: Joi.string(),
+    InvoicePaymentMethods: Joi.array().items(Joi.number()).required(),
+    giftMsg: Joi.string(),
     deliveryType: Joi.string()
       .valid(DeliveryType.DELIVERY, DeliveryType.PICKUP)
       .required(),

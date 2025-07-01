@@ -8,6 +8,7 @@ export const createInvoice = async ({
   NotificationOption,
   CustomerName,
   InvoiceValue,
+  InvoicePaymentMethods,
 }: any) => {
   try {
     const url = baseURL + '/v2/SendPayment';
@@ -24,6 +25,7 @@ export const createInvoice = async ({
       InvoiceValue,
       CallBackUrl: 'https://milagro-shop.netlify.app/?from_payment=success',
       ErrorUrl: 'https://milagro-shop.netlify.app/?from_payment=failed',
+      InvoicePaymentMethods,
     };
 
     const result = await axios({
@@ -83,6 +85,38 @@ export const refundInvoice = async ({ Key, Amount }: any) => {
       Key,
       KeyType: 'invoiceid',
       Amount,
+    };
+
+    const result = await axios({
+      method: 'post',
+      url,
+      data,
+      headers,
+    });
+
+    return result.data;
+  } catch (error: any) {
+    console.log(error.response.data);
+    throw new Error(error);
+  }
+};
+
+export const fetchPaymentMethods = async ({
+  InvoiceAmount,
+  CurrencyIso,
+}: any) => {
+  try {
+    const url = baseURL + '/v2/InitiatePayment';
+
+    const headers = {
+      Accept: 'application/json',
+      Authorization: 'Bearer ' + token,
+      'Content-Type': 'application/json',
+    };
+
+    const data = {
+      CurrencyIso,
+      InvoiceAmount,
     };
 
     const result = await axios({

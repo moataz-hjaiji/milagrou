@@ -49,4 +49,9 @@ export default {
     password: Joi.string().min(8).required(),
     confirmPassword: Joi.string().min(8).required(),
   }),
+
+  changePassword: Joi.object().keys({
+    newPassword: Joi.string().required(),
+    oldPassword: Joi.string().required(),
+  }),
 };

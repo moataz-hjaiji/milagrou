@@ -19,6 +19,9 @@ interface checkoutParams {
   reservationDate?: Date;
   addressId?: string;
   code?: string;
+  note: string;
+  giftMsg: string;
+  InvoicePaymentMethods: number[];
 }
 
 export const checkoutAdmin = async ({
@@ -29,6 +32,9 @@ export const checkoutAdmin = async ({
   reservationDate,
   addressId,
   code,
+  note,
+  giftMsg,
+  InvoicePaymentMethods,
 }: checkoutParams) => {
   const items = await calculateOrderPrices(cart, false);
 
@@ -98,6 +104,7 @@ export const checkoutAdmin = async ({
     NotificationOption: 'LNK',
     CustomerName: `${user?.firstName} ${user?.lastName}`,
     InvoiceValue: orderPrice,
+    InvoicePaymentMethods,
   };
 
   const result = await createInvoice(paymentData);
@@ -115,6 +122,8 @@ export const checkoutAdmin = async ({
     reservationDate,
     invoiceId: result.Data.InvoiceId,
     invoiceUrl: result.Data.InvoiceURL,
+    note,
+    giftMsg,
   } as any);
 
   if (promoCode) {

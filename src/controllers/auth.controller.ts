@@ -131,6 +131,19 @@ export const resetPassword = asyncHandler(
   }
 );
 
+export const changePassword = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user._id;
+    const result = await authService.changePassword({
+      userId,
+      oldPassword,
+      newPassword,
+    });
+    new SuccessResponse('Password change success', result).send(res);
+  }
+);
+
 export const googleAuthProvider = asyncHandler(
   async (req: Request, res: Response) => {
     const { idToken } = req.body;

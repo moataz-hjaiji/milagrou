@@ -80,6 +80,12 @@ router.post(
 router.use('/', authentication);
 
 router.post(
+  '/password/change',
+  validator(schema.changePassword),
+  authController.changePassword
+);
+
+router.post(
   '/refresh',
   validator(schema.refreshToken),
   authController.refreshToken

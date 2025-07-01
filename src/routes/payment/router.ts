@@ -35,4 +35,12 @@ router.route('/refund').post(
   paymentController.invoiceRefund
 );
 
+router.route('/payment-methods').post(
+  // assignAction({ action: ACTIONS.create, entity: 'Area' }),
+  // authorization,
+  // authentication,
+  validator(schema.getPaymentMethods),
+  paymentController.getPaymentMethods
+);
+
 export default router;

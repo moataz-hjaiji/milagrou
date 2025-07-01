@@ -30,3 +30,14 @@ export const invoiceRefund = asyncHandler(
     new SuccessResponse('success', result).send(res);
   }
 );
+
+export const getPaymentMethods = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { InvoiceAmount, CurrencyIso } = req.body;
+    const result = await paymentService.getPaymentMethods(
+      InvoiceAmount,
+      CurrencyIso
+    );
+    new SuccessResponse('success', result).send(res);
+  }
+);
