@@ -51,6 +51,10 @@ export default interface IOrder extends Document {
   paymentMethod: string;
   note: string;
   giftMsg: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
   deletedAt?: Date;
 }
 
@@ -143,6 +147,18 @@ const schema = new Schema<IOrder>(
       type: String,
     },
     giftMsg: {
+      type: String,
+    },
+    firstName: {
+      type: String,
+    },
+    lastName: {
+      type: String,
+    },
+    email: {
+      type: String,
+    },
+    phoneNumber: {
       type: String,
     },
     deletedAt: {

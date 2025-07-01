@@ -23,6 +23,10 @@ interface checkoutParams {
   note: string;
   giftMsg: string;
   code?: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
   InvoicePaymentMethods: number[];
 }
 
@@ -37,6 +41,10 @@ export const checkout = async ({
   note,
   giftMsg,
   InvoicePaymentMethods,
+  firstName,
+  lastName,
+  email,
+  phoneNumber,
 }: checkoutParams) => {
   if (userId) {
     const cart: any = await CartRepo.findByObj({ userId });
@@ -264,7 +272,7 @@ export const checkout = async ({
 
     const paymentData = {
       NotificationOption: 'LNK',
-      CustomerName: `Guest User`,
+      CustomerName: `${firstName} ${lastName}`,
       InvoiceValue: orderPrice,
       InvoicePaymentMethods,
     };
@@ -286,6 +294,10 @@ export const checkout = async ({
       invoiceUrl: result.Data.InvoiceURL,
       note,
       giftMsg,
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
     } as any);
 
     if (promoCode) {

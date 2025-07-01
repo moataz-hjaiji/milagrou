@@ -15,6 +15,10 @@ export default {
   checkout: Joi.object().keys({
     userId: JoiObjectId(),
     browserId: Joi.string(),
+    firstName: Joi.string(),
+    lastName: Joi.string(),
+    phoneNumber: Joi.string(),
+    email: Joi.string(),
     note: Joi.string(),
     giftMsg: Joi.string(),
     deliveryType: Joi.string()
