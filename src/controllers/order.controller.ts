@@ -22,6 +22,10 @@ export const checkout = asyncHandler(
       note,
       giftMsg,
       InvoicePaymentMethods,
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
     } = req.body;
 
     const result = await orderService.checkout({
@@ -35,6 +39,10 @@ export const checkout = asyncHandler(
       note,
       giftMsg,
       InvoicePaymentMethods,
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
     });
     new SuccessResponse('success', result).send(res);
   }
@@ -53,6 +61,10 @@ export const checkoutAdmin = asyncHandler(
       note,
       giftMsg,
       InvoicePaymentMethods,
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
     } = req.body;
 
     const result = await orderService.checkoutAdmin({
@@ -66,6 +78,10 @@ export const checkoutAdmin = asyncHandler(
       note,
       giftMsg,
       InvoicePaymentMethods,
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
     });
     new SuccessResponse('success', result).send(res);
   }

@@ -22,6 +22,10 @@ interface checkoutParams {
   note: string;
   giftMsg: string;
   InvoicePaymentMethods: number[];
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
 }
 
 export const checkoutAdmin = async ({
@@ -35,6 +39,10 @@ export const checkoutAdmin = async ({
   note,
   giftMsg,
   InvoicePaymentMethods,
+  firstName,
+  lastName,
+  email,
+  phoneNumber,
 }: checkoutParams) => {
   const items = await calculateOrderPrices(cart, false);
 
@@ -124,6 +132,10 @@ export const checkoutAdmin = async ({
     invoiceUrl: result.Data.InvoiceURL,
     note,
     giftMsg,
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
   } as any);
 
   if (promoCode) {

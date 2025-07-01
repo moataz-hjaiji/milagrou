@@ -35,6 +35,10 @@ export default {
 
   checkoutAdmin: Joi.object().keys({
     userId: JoiObjectId(),
+    firstName: Joi.string(),
+    lastName: Joi.string(),
+    phoneNumber: Joi.string(),
+    email: Joi.string(),
     note: Joi.string(),
     InvoicePaymentMethods: Joi.array().items(Joi.number()).required(),
     giftMsg: Joi.string(),
