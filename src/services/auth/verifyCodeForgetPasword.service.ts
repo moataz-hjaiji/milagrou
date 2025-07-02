@@ -1,0 +1,18 @@
+import UserRepo from '../../database/repository/UserRepo';
+import { BadRequestError } from '../../core/ApiError';
+
+interface verifyCodeParams {
+  phoneNumber: string;
+  forgetConfirmationCode: number;
+}
+
+export const verifyCodeForgetPasword = async ({
+  phoneNumber,
+  forgetConfirmationCode,
+}: verifyCodeParams) => {
+  const userCheck = await UserRepo.findByObj({
+    phoneNumber,
+    forgetConfirmationCode,
+  });
+  if (!userCheck) throw new BadRequestError('invalid verification code');
+};
