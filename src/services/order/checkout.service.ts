@@ -136,15 +136,6 @@ export const checkout = async ({
 
     const user = await UserRepo.findById(userId);
 
-    const paymentData = {
-      NotificationOption: 'LNK',
-      CustomerName: `${user?.firstName} ${user?.lastName}`,
-      InvoiceValue: orderPrice,
-      InvoicePaymentMethods,
-    };
-
-    const result = await createInvoice(paymentData);
-
     const order = await OrderRepo.create({
       userId,
       deliveryType,
@@ -156,11 +147,24 @@ export const checkout = async ({
       promoCodeId: promoCode?._id,
       items,
       reservationDate,
-      invoiceId: result.Data.InvoiceId,
-      invoiceUrl: result.Data.InvoiceURL,
       note,
       giftMsg,
     } as any);
+
+    const paymentData = {
+      NotificationOption: 'LNK',
+      CustomerName: `${firstName} ${lastName}`,
+      InvoiceValue: orderPrice,
+      InvoicePaymentMethods,
+      orderId: order._id.toString(),
+    };
+
+    const paymentResult = await createInvoice(paymentData);
+
+    order.invoiceId = paymentResult.Data.InvoiceId;
+    order.invoiceUrl = paymentResult.Data.InvoiceURL;
+
+    await order.save();
 
     if (promoCode) {
       ++promoCode.actualUsage;
@@ -270,15 +274,6 @@ export const checkout = async ({
 
     if (orderNewIdCheck?.newId) newId = orderNewIdCheck?.newId + 1;
 
-    const paymentData = {
-      NotificationOption: 'LNK',
-      CustomerName: `${firstName} ${lastName}`,
-      InvoiceValue: orderPrice,
-      InvoicePaymentMethods,
-    };
-
-    const result = await createInvoice(paymentData);
-
     const order = await OrderRepo.create({
       browserId,
       deliveryType,
@@ -290,8 +285,6 @@ export const checkout = async ({
       promoCodeId: promoCode?._id,
       items,
       reservationDate,
-      invoiceId: result.Data.InvoiceId,
-      invoiceUrl: result.Data.InvoiceURL,
       note,
       giftMsg,
       firstName,
@@ -299,6 +292,21 @@ export const checkout = async ({
       email,
       phoneNumber,
     } as any);
+
+    const paymentData = {
+      NotificationOption: 'LNK',
+      CustomerName: `${firstName} ${lastName}`,
+      InvoiceValue: orderPrice,
+      InvoicePaymentMethods,
+      orderId: order._id.toString(),
+    };
+
+    const paymentResult = await createInvoice(paymentData);
+
+    order.invoiceId = paymentResult.Data.InvoiceId;
+    order.invoiceUrl = paymentResult.Data.InvoiceURL;
+
+    await order.save();
 
     if (promoCode) {
       ++promoCode.actualUsage;

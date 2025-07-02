@@ -108,15 +108,6 @@ export const checkoutAdmin = async ({
 
   const user = await UserRepo.findById(userId);
 
-  const paymentData = {
-    NotificationOption: 'LNK',
-    CustomerName: `${user?.firstName} ${user?.lastName}`,
-    InvoiceValue: orderPrice,
-    InvoicePaymentMethods,
-  };
-
-  const result = await createInvoice(paymentData);
-
   const order = await OrderRepo.create({
     userId,
     deliveryType,
@@ -128,8 +119,6 @@ export const checkoutAdmin = async ({
     promoCodeId: promoCode?._id,
     items,
     reservationDate,
-    invoiceId: result.Data.InvoiceId,
-    invoiceUrl: result.Data.InvoiceURL,
     note,
     giftMsg,
     firstName,
@@ -137,6 +126,21 @@ export const checkoutAdmin = async ({
     email,
     phoneNumber,
   } as any);
+
+  const paymentData = {
+    NotificationOption: 'LNK',
+    CustomerName: `${firstName} ${lastName}`,
+    InvoiceValue: orderPrice,
+    InvoicePaymentMethods,
+    orderId: order._id.toString(),
+  };
+
+  const paymentResult = await createInvoice(paymentData);
+
+  order.invoiceId = paymentResult.Data.InvoiceId;
+  order.invoiceUrl = paymentResult.Data.InvoiceURL;
+
+  await order.save();
 
   if (promoCode) {
     ++promoCode.actualUsage;

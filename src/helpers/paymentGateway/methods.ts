@@ -9,6 +9,7 @@ export const createInvoice = async ({
   CustomerName,
   InvoiceValue,
   InvoicePaymentMethods,
+  orderId,
 }: any) => {
   try {
     const url = baseURL + '/v2/SendPayment';
@@ -23,7 +24,7 @@ export const createInvoice = async ({
       NotificationOption,
       CustomerName,
       InvoiceValue,
-      CallBackUrl: 'https://milagro-shop.netlify.app/?from_payment=success',
+      CallBackUrl: `https://milagro-shop.netlify.app/?from_payment=success&orderId=${orderId}`,
       ErrorUrl: 'https://milagro-shop.netlify.app/?from_payment=failed',
       InvoicePaymentMethods,
     };
