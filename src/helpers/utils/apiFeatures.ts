@@ -183,15 +183,19 @@ class APIFeatures {
     return this;
   }
 
-  recherche(searchFields: any) {
+  recherche(searchFields: any[]) {
     if (this.queryString?.search) {
-      let filter: any[] = [];
-      const queryOption = searchFields.map((field: any) =>
-        filter.push({
-          [field]: { $regex: this.queryString.search, $options: 'i' },
-        })
-      );
-      this.query = this.query.find({ $or: filter });
+      const searchValue = this.queryString.search;
+      const filters = searchFields.map((field) => ({
+        $expr: {
+          $regexMatch: {
+            input: { $toString: `$${field}` },
+            regex: searchValue,
+            options: 'i',
+          },
+        },
+      }));
+      this.query = this.query.find({ $or: filters });
     }
     return this;
   }
