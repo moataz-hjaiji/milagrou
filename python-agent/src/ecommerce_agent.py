@@ -11,6 +11,8 @@ from langchain.schema import HumanMessage, AIMessage, SystemMessage
 from pydantic import BaseModel, Field
 
 from http_mcp_client import HTTPMCPClient, MCPTool, MCPResponse
+from response_types import ResponseType, create_response, BaseResponse
+from response_mapper import ResponseMapper
 
 logger = logging.getLogger(__name__)
 
@@ -48,13 +50,32 @@ class EcommerceTool(BaseTool):
             response = await self.mcp_client.execute_tool(self.name, filtered_kwargs, user_token=self.user_token)
             
             if response.success:
-                return json.dumps(response.data, indent=2)
+                # For read actions, return structured JSON response
+                if self.name in ["get_products", "get_product", "search_products", "get_categories", "get_category", 
+                               "get_cart", "get_orders", "get_order", "get_profile", "get_addresses"]:
+                    structured_response = ResponseMapper.map_tool_response(self.name, response.data)
+                    return json.dumps(structured_response.dict(), indent=2)
+                else:
+                    # For other actions, return simple JSON
+                    return json.dumps(response.data, indent=2)
             else:
-                return f"Error: {response.error}"
+                error_response = create_response(
+                    ResponseType.ERROR,
+                    success=False,
+                    message=f"Tool execution failed: {response.error}",
+                    error=response.error
+                )
+                return json.dumps(error_response.dict(), indent=2)
                 
         except Exception as e:
             logger.error(f"Error running tool {self.name}: {e}")
-            return f"Error: {str(e)}"
+            error_response = create_response(
+                ResponseType.ERROR,
+                success=False,
+                message=f"Tool execution error: {str(e)}",
+                error=str(e)
+            )
+            return json.dumps(error_response.dict(), indent=2)
     
     def set_user_token(self, token: str):
         """Set the user token for authentication"""
@@ -107,13 +128,13 @@ class EcommerceAgent:
         # Create system prompt
         system_prompt = """You are an AI assistant for an e-commerce platform. You can help users with:
 
-1. **Product Browsing**: Search and view products, categories, and product details
-2. **Shopping Cart**: Add items to cart, view cart, update quantities, remove items
-3. **User Management**: View and update user profile, manage addresses
-4. **Order Management**: Create orders, view order history, track orders
-5. **Authentication**: Help users login, register, and manage their accounts
+1. Product Browsing: Search and view products, categories, and product details
+2. Shopping Cart: Add items to cart, view cart, update quantities, remove items
+3. User Management: View and update user profile, manage addresses
+4. Order Management: Create orders, view order history, track orders
+5. Authentication: Help users login, register, and manage their accounts
 
-Always be helpful, friendly, and provide clear information. If a user asks for something you can't do, explain what you can help with instead.
+IMPORTANT: For read operations (getting products, categories, cart, orders, etc.), always present the data in clean JSON format without markdown formatting. The tools will return structured JSON data - present this data clearly and concisely.
 
 Available tools:
 - Authentication: login_user, register_user, logout_user, refresh_token
@@ -123,6 +144,8 @@ Available tools:
 - User: get_profile, update_profile, get_addresses, add_address, update_address, delete_address
 
 When users ask about products, always try to get the most relevant information. For shopping cart operations, make sure to get the current cart first if needed.
+
+Response format: For data retrieval operations, present the JSON data in a clean, readable format without markdown.
 """
 
         # Create prompt template
@@ -160,6 +183,46 @@ When users ask about products, always try to get the most relevant information. 
                 for tool in self.tools:
                     if hasattr(tool, 'set_user_token'):
                         tool.set_user_token(user_token)
+            
+            # Check if this is a read operation request
+            read_operations = ["show", "list", "get", "find", "search", "view", "display", "browse"]
+            is_read_operation = any(op in message.lower() for op in read_operations)
+            
+            if is_read_operation:
+                # For read operations, try to directly call the appropriate tool
+                if any(keyword in message.lower() for keyword in ["product", "laptop", "item"]):
+                    if "category" in message.lower():
+                        # Get categories
+                        response = await self.mcp_client.execute_tool("get_categories", {}, user_token)
+                        if response.success:
+                            structured_response = ResponseMapper.map_tool_response("get_categories", response.data)
+                            return json.dumps(structured_response.dict(), indent=2)
+                        else:
+                            return json.dumps({"error": response.error}, indent=2)
+                    else:
+                        # Get products
+                        response = await self.mcp_client.execute_tool("get_products", {}, user_token)
+                        if response.success:
+                            structured_response = ResponseMapper.map_tool_response("get_products", response.data)
+                            return json.dumps(structured_response.dict(), indent=2)
+                        else:
+                            return json.dumps({"error": response.error}, indent=2)
+                elif "cart" in message.lower():
+                    # Get cart
+                    response = await self.mcp_client.execute_tool("get_cart", {"userId": "user123"}, user_token)
+                    if response.success:
+                        structured_response = ResponseMapper.map_tool_response("get_cart", response.data)
+                        return json.dumps(structured_response.dict(), indent=2)
+                    else:
+                        return json.dumps({"error": response.error}, indent=2)
+                elif "order" in message.lower():
+                    # Get orders
+                    response = await self.mcp_client.execute_tool("get_orders", {}, user_token)
+                    if response.success:
+                        structured_response = ResponseMapper.map_tool_response("get_orders", response.data)
+                        return json.dumps(structured_response.dict(), indent=2)
+                    else:
+                        return json.dumps({"error": response.error}, indent=2)
             
             # Convert chat history to LangChain messages
             messages = []
