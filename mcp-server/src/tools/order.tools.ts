@@ -37,9 +37,10 @@ export class OrderTools {
           properties: {
             shippingAddress: { type: 'string', description: 'Shipping address ID' },
             paymentMethod: { type: 'string', description: 'Payment method' },
-            promoCode: { type: 'string', description: 'Promo code (optional)' }
+            promoCode: { type: 'string', description: 'Promo code (optional)' },
+            deliveryType: { type: 'string', description: 'must be a DELIVERY or PICKUP' }
           },
-          required: ['shippingAddress', 'paymentMethod']
+          required: ['shippingAddress', 'paymentMethod', 'deliveryType']
         }
       },
       {
