@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=ecommerce
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - ecommerce-network
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecommerce-network
+
+  # MCP Server (development)
+  mcp-server:
+    build:
+      context: ./mcp-server
+      dockerfile: Dockerfile.dev
+    environment:
+      - API_BASE_URL=http://host.docker.internal:3000/api
+      - JWT_SECRET=your-jwt-secret-here
+    volumes:
+      - ./mcp-server:/app
+      - /app/node_modules
+    networks:
+      - ecommerce-network
+    command: npm run dev
+
+  # Python LangChain Agent (development)
+  python-agent:
+    build:
+      context: ./python-agent
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MCP_SERVER_COMMAND=node
+      - MCP_SERVER_ARGS=../mcp-server/dist/server.js
+      - ECOMMERCE_API_URL=http://host.docker.internal:3000/api
+      - PORT=8000
+    volumes:
+      - ./python-agent:/app
+    networks:
+      - ecommerce-network
+    depends_on:
+      - mcp-server
+    command: python run_api.py
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  ecommerce-network:
+    driver: bridge

@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # E-commerce API (your existing API)
+  ecommerce-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_URI=mongodb://admin:password@mongodb:27017/milagro?authSource=admin
+      - DB_HOST=mongodb
+      - DB_PORT=27017
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret}
+      - CORS_URL=http://localhost:3001
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - ecommerce-network
+    depends_on:
+      - mongodb
+    command: npm run dev
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=ecommerce
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - ecommerce-network
+
+  # MCP Server
+  mcp-server:
+    build:
+      context: ./mcp-server
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - API_BASE_URL=http://ecommerce-api:3000/api
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret}
+      - MCP_PORT=${MCP_PORT:-3002}
+      - MCP_API_KEY=${MCP_API_KEY:-your-secure-mcp-api-key-here}
+    networks:
+      - ecommerce-network
+    depends_on:
+      - ecommerce-api
+    command: npm run start
+
+  # Python LangChain Agent
+  python-agent:
+    build:
+      context: ./python-agent
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # Azure OpenAI Configuration
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
+      - AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME=${AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+      # MCP Configuration
+      - MCP_SERVER_COMMAND=node
+      - MCP_SERVER_ARGS=../mcp-server/dist/server.js
+      - ECOMMERCE_API_URL=http://ecommerce-api:3000/api
+      - PORT=8000
+      # Database Configuration
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/milagro?authSource=admin
+    networks:
+      - ecommerce-network
+    depends_on:
+      - mcp-server
+    command: python run_api.py
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecommerce-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  ecommerce-network:
+    driver: bridge

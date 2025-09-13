@@ -17,6 +17,7 @@
     "eslint": "eslint . --ext .js,.ts",
     "upgrade": "npm update --save-dev && npm update --save",
     "test": "NODE_ENV=test jest __tests__/index.test.ts --runInBand --detectOpenHandles --watchAll --passWithNoTests",
+    "seed:laptops": "ts-node -r dotenv/config src/seeders/laptop-seeder.ts",
     "clearTestCache": "jest clearCache --passWithNoTests",
     "coverage": "NODE_ENV=test jest __tests__/index.test.ts --coverage --runInBand --detectOpenHandles --watchAll --passWithNoTests",
     "seed": "ts-node-dev -r dotenv/config src/helpers/seeder/index.ts"

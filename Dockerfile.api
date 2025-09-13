@@ -1,0 +1,26 @@
+# Dockerfile for E-commerce API
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies including dev dependencies for build
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Skip build step for now - run in development mode
+# RUN npm run build
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/api || exit 1
+
+# Start the application in development mode with debugging
+CMD ["sh", "-c", "echo 'Starting ecommerce-api...' && echo 'Current directory:' && pwd && echo 'Files in /app:' && ls -la && echo 'Running npm run dev...' && npm run dev"]

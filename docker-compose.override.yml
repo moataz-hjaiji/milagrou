@@ -1,0 +1,32 @@
+# Docker Compose override file for local development
+# This file is automatically loaded by docker-compose
+
+version: '3.8'
+
+services:
+  # Override for local development
+  ecommerce-api:
+    # Use local development setup instead of Docker
+    image: node:18-alpine
+    command: ["sh", "-c", "echo 'Starting ecommerce-api...' && echo 'Current directory:' && pwd && echo 'Files in /app:' && ls -la && echo 'Running npm run dev...' && npm run dev"]
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+    networks:
+      - ecommerce-network
+
+  # Override MCP server for development
+  mcp-server:
+    volumes:
+      - ./mcp-server:/app
+      - /app/node_modules
+    command: npx ts-node src/server.ts
+
+  # Override Python agent for development
+  python-agent:
+    volumes:
+      - ./python-agent:/app
+    command: python run_api.py
