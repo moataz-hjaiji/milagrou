@@ -58,13 +58,47 @@ services:
       - ecommerce-api
     command: npm run start
 
+  # Authentication Service (Python FastAPI)
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "9000:8000"
+    environment:
+      # JWT Configuration
+      - JWT_SECRET_KEY=${AUTH_JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      - JWT_ALGORITHM=HS256
+      - JWT_EXPIRE_MINUTES=1440
+      # App Settings
+      - DEBUG=true
+      - HOST=0.0.0.0
+      - PORT=8000
+      # Security Settings
+      - BCRYPT_ROUNDS=12
+      # Database Configuration
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/milagro?authSource=admin
+    networks:
+      - ecommerce-network
+    depends_on:
+      - mongodb
+    volumes:
+      - ./auth-service:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   # Python LangChain Agent
   python-agent:
     build:
       context: ./python-agent
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       # Azure OpenAI Configuration
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
@@ -76,6 +110,7 @@ services:
       - MCP_SERVER_COMMAND=node
       - MCP_SERVER_ARGS=../mcp-server/dist/server.js
       - ECOMMERCE_API_URL=http://ecommerce-api:3000/api
+      - AUTH_SERVICE_URL=http://auth-service:8000
       - PORT=8000
       # Database Configuration
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/milagro?authSource=admin
@@ -83,6 +118,7 @@ services:
       - ecommerce-network
     depends_on:
       - mcp-server
+      - auth-service
     command: python run_api.py
 
   # Redis for caching (optional)

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 from http_mcp_client import HTTPMCPClient
 from ecommerce_agent import EcommerceAgent
+from auth_utils import get_current_user, get_optional_user, require_admin, auth_service
 
 # Load environment variables
 load_dotenv()
@@ -24,6 +25,33 @@ class ChatMessage(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
+    success: bool
+    error: Optional[str] = None
+    user: Optional[Dict[str, Any]] = None
+
+class AuthenticatedChatMessage(BaseModel):
+    message: str
+    chat_history: Optional[List[Dict[str, str]]] = None
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: Dict[str, Any]
+    success: bool
+    error: Optional[str] = None
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    name: str
+
+class RegisterResponse(BaseModel):
+    message: str
+    user: Dict[str, Any]
     success: bool
     error: Optional[str] = None
 
@@ -123,23 +151,36 @@ async def health_check():
         raise HTTPException(status_code=503, detail=f"Agent health check failed: {str(e)}")
 
 @app.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatMessage):
-    """Chat with the AI agent"""
+async def chat(request: ChatMessage, current_user: Optional[Dict[str, Any]] = Depends(get_optional_user)):
+    """Chat with the AI agent (optionally authenticated)"""
     global agent
     
     if not agent:
         raise HTTPException(status_code=503, detail="Agent not initialized")
     
     try:
-        response = await agent.chat(request.message, request.chat_history)
-        return ChatResponse(response=response, success=True)
+        # Add user context to the message if authenticated
+        enhanced_message = request.message
+        if current_user:
+            user_roles = current_user.get('roles', [])
+            user_name = current_user.get('name', 'Unknown')
+            user_email = current_user.get('email', 'Unknown')
+            user_context = f"[User: {user_name} ({user_email}) - Roles: {', '.join(user_roles)}] "
+            enhanced_message = user_context + request.message
         
+        response = await agent.chat(enhanced_message, request.chat_history)
+        return ChatResponse(
+            response=response, 
+            success=True, 
+            user=current_user
+        )
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
         return ChatResponse(
-            response="",
+            response=f"I apologize, but I encountered an error: {str(e)}",
             success=False,
-            error=str(e)
+            error=str(e),
+            user=current_user
         )
 
 @app.get("/tools")
@@ -156,6 +197,94 @@ async def get_tools():
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Authentication endpoints - proxy to auth-service
+@app.post("/auth/login", response_model=LoginResponse)
+async def login(request: LoginRequest):
+    """Login with email and password"""
+    try:
+        import httpx
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                f"{auth_service.auth_service_url}/auth/login",
+                json={"email": request.email, "password": request.password}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return LoginResponse(
+                    access_token=data["access_token"],
+                    token_type=data["token_type"],
+                    user=data["user"],
+                    success=True
+                )
+            else:
+                error_data = response.json() if response.headers.get("content-type", "").startswith("application/json") else {"detail": "Login failed"}
+                return LoginResponse(
+                    access_token="",
+                    token_type="",
+                    user={},
+                    success=False,
+                    error=error_data.get("detail", "Login failed")
+                )
+                
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        return LoginResponse(
+            access_token="",
+            token_type="",
+            user={},
+            success=False,
+            error=str(e)
+        )
+
+@app.post("/auth/register", response_model=RegisterResponse)
+async def register(request: RegisterRequest):
+    """Register a new user"""
+    try:
+        import httpx
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                f"{auth_service.auth_service_url}/auth/signup",
+                json={"email": request.email, "password": request.password, "name": request.name}
+            )
+            
+            if response.status_code == 201:
+                data = response.json()
+                return RegisterResponse(
+                    message="User registered successfully",
+                    user=data["user"],
+                    success=True
+                )
+            else:
+                error_data = response.json() if response.headers.get("content-type", "").startswith("application/json") else {"detail": "Registration failed"}
+                return RegisterResponse(
+                    message="",
+                    user={},
+                    success=False,
+                    error=error_data.get("detail", "Registration failed")
+                )
+                
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+        return RegisterResponse(
+            message="",
+            user={},
+            success=False,
+            error=str(e)
+        )
+
+@app.get("/auth/me")
+async def get_current_user_info(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Get current user information"""
+    return current_user
+
+@app.post("/auth/verify")
+async def verify_token(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Verify JWT token"""
+    return current_user
 
 @app.post("/tools/call", response_model=ToolCallResponse)
 async def call_tool(request: ToolCallRequest):

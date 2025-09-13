@@ -1,26 +1,35 @@
 # Dockerfile for E-commerce API
 FROM node:18-alpine
 
+# Install curl for health check
+RUN apk add --no-cache curl
+
+# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first (for better Docker layer caching)
 COPY package*.json ./
 
-# Install dependencies including dev dependencies for build
+# Verify package.json exists and show contents
+RUN echo "Contents of /app:" && ls -la && \
+    echo "Checking package.json:" && \
+    if [ -f package.json ]; then echo "package.json found"; else echo "package.json NOT found"; exit 1; fi
+
+# Install dependencies
 RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Skip build step for now - run in development mode
-# RUN npm run build
+# Show final directory structure
+RUN echo "Final contents of /app:" && ls -la
 
 # Expose port
 EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/api || exit 1
+  CMD curl -f http://localhost:3000/api/health || exit 1
 
-# Start the application in development mode with debugging
-CMD ["sh", "-c", "echo 'Starting ecommerce-api...' && echo 'Current directory:' && pwd && echo 'Files in /app:' && ls -la && echo 'Running npm run dev...' && npm run dev"]
+# Start the application in development mode
+CMD ["npm", "run", "dev"]

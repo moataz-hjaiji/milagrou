@@ -153,10 +153,27 @@ When users ask about products, always try to get the most relevant information. 
             messages = []
             if chat_history:
                 for msg in chat_history:
+                    # Ensure the message has the required fields
+                    if not isinstance(msg, dict):
+                        continue
+                    
+                    # Check if the message has the required 'role' field
+                    if "role" not in msg:
+                        logger.warning(f"Chat history message missing 'role' field: {msg}")
+                        continue
+                    
+                    # Check if the message has content
+                    content = msg.get("content", msg.get("message", ""))
+                    if not content:
+                        logger.warning(f"Chat history message missing content: {msg}")
+                        continue
+                    
                     if msg["role"] == "user":
-                        messages.append(HumanMessage(content=msg["content"]))
+                        messages.append(HumanMessage(content=content))
                     elif msg["role"] == "assistant":
-                        messages.append(AIMessage(content=msg["content"]))
+                        messages.append(AIMessage(content=content))
+                    else:
+                        logger.warning(f"Unknown role in chat history: {msg['role']}")
             
             # Run the agent
             result = await self.agent_executor.ainvoke({

@@ -3,89 +3,55 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const index_js_1 = require("@modelcontextprotocol/sdk/server/index.js");
-const stdio_js_1 = require("@modelcontextprotocol/sdk/server/stdio.js");
-const api_client_1 = require("./clients/api-client");
-const index_1 = require("./tools/index");
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const tools_1 = require("./tools");
+const api_client_1 = require("./clients/api-client");
 // Load environment variables
 dotenv_1.default.config();
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api';
-// Create API client
-const apiClient = new api_client_1.ApiClient(API_BASE_URL);
-// Create tool manager
-const toolManager = new index_1.ToolManager(apiClient);
-// Create MCP server
-const server = new index_js_1.Server({
-    name: 'ecommerce-mcp-server',
-    version: '1.0.0',
-}, {
-    capabilities: {
-        tools: {},
-    },
+const app = (0, express_1.default)();
+const PORT = process.env.MCP_PORT || 3002;
+// Middleware
+app.use((0, cors_1.default)());
+app.use(express_1.default.json());
+// Initialize API client
+const apiClient = new api_client_1.ApiClient(process.env.API_BASE_URL || 'http://ecommerce-api:3000/api');
+// Initialize tool manager
+const toolManager = new tools_1.ToolManager(apiClient);
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', message: 'MCP Server is running' });
 });
-// Handle tool listing
-server.setRequestHandler('tools/list', async () => {
-    const tools = toolManager.getAllTools();
-    return { tools };
-});
-// Handle tool execution
-server.setRequestHandler('tools/call', async (request) => {
-    const { name, arguments: args } = request.params;
+// Get available tools
+app.get('/tools', (req, res) => {
     try {
-        console.log(`Executing tool: ${name} with args:`, args);
-        const result = await toolManager.executeTool(name, args);
-        console.log(`Tool ${name} executed successfully:`, result);
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: JSON.stringify(result, null, 2)
-                }
-            ]
-        };
+        const tools = toolManager.getAllTools();
+        res.json({ tools });
     }
     catch (error) {
-        console.error(`Error executing tool ${name}:`, error);
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: JSON.stringify({
-                        success: false,
-                        error: error.message || 'Unknown error occurred'
-                    }, null, 2)
-                }
-            ],
-            isError: true
-        };
+        res.status(500).json({ error: 'Failed to get tools' });
     }
 });
-// Handle ping
-server.setRequestHandler('ping', async () => {
-    return { message: 'pong' };
-});
-// Start the server
-async function startServer() {
+// Execute tool endpoint
+app.post('/execute', async (req, res) => {
     try {
-        const transport = new stdio_js_1.StdioServerTransport();
-        await server.connect(transport);
-        console.log('E-commerce MCP Server started successfully');
+        const { toolName, args } = req.body;
+        if (!toolName) {
+            return res.status(400).json({ error: 'Tool name is required' });
+        }
+        const result = await toolManager.executeTool(toolName, args);
+        res.json({ result });
     }
     catch (error) {
-        console.error('Failed to start MCP server:', error);
-        process.exit(1);
+        console.error('Tool execution error:', error);
+        res.status(500).json({ error: 'Tool execution failed' });
     }
-}
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-    console.log('Shutting down MCP server...');
-    process.exit(0);
 });
-process.on('SIGTERM', async () => {
-    console.log('Shutting down MCP server...');
-    process.exit(0);
+// Start server
+app.listen(PORT, () => {
+    console.log(`MCP Server running on port ${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
+    console.log(`Available tools: http://localhost:${PORT}/tools`);
 });
-// Start the server
-startServer();
 //# sourceMappingURL=server.js.map

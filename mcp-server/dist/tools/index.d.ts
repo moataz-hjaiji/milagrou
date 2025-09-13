@@ -8,6 +8,14 @@ export declare class ToolManager {
     private userTools;
     constructor(apiClient: ApiClient);
     getAllTools(): MCPTool[];
-    executeTool(toolName: string, args: any): Promise<import("../types").AuthResponse | import("../types").ApiResponse<any>>;
+    executeTool(toolName: string, args: any): Promise<import("../types").AuthResponse | import("../types").ApiResponse<any> | {
+        success: boolean;
+        data: any;
+        error?: undefined;
+    } | {
+        success: boolean;
+        error: any;
+        data?: undefined;
+    }>;
 }
 //# sourceMappingURL=index.d.ts.map
