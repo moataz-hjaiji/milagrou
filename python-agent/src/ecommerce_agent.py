@@ -21,6 +21,7 @@ class EcommerceTool(BaseTool):
     description: str
     mcp_client: HTTPMCPClient
     mcp_tool: MCPTool
+    user_token: Optional[str] = None
     
     def _run(self, **kwargs) -> str:
         """Synchronous run method"""
@@ -43,7 +44,8 @@ class EcommerceTool(BaseTool):
                 if param not in filtered_kwargs:
                     filtered_kwargs[param] = kwargs.get(param, "")
             
-            response = await self.mcp_client.execute_tool(self.name, filtered_kwargs)
+            # Pass user token to MCP client if available
+            response = await self.mcp_client.execute_tool(self.name, filtered_kwargs, user_token=self.user_token)
             
             if response.success:
                 return json.dumps(response.data, indent=2)
@@ -53,6 +55,10 @@ class EcommerceTool(BaseTool):
         except Exception as e:
             logger.error(f"Error running tool {self.name}: {e}")
             return f"Error: {str(e)}"
+    
+    def set_user_token(self, token: str):
+        """Set the user token for authentication"""
+        self.user_token = token
 
 class EcommerceAgent:
     def __init__(self, mcp_client: HTTPMCPClient, azure_config: Dict[str, str]):
@@ -143,11 +149,17 @@ When users ask about products, always try to get the most relevant information. 
             max_iterations=5
         )
     
-    async def chat(self, message: str, chat_history: List[Dict[str, str]] = None) -> str:
-        """Process a chat message"""
+    async def chat(self, message: str, chat_history: List[Dict[str, str]] = None, user_token: Optional[str] = None) -> str:
+        """Process a chat message with optional user authentication"""
         try:
             if not self.agent_executor:
                 raise RuntimeError("Agent not initialized")
+            
+            # Set the user token for all tools if provided
+            if user_token:
+                for tool in self.tools:
+                    if hasattr(tool, 'set_user_token'):
+                        tool.set_user_token(user_token)
             
             # Convert chat history to LangChain messages
             messages = []
@@ -197,10 +209,10 @@ When users ask about products, always try to get the most relevant information. 
             for tool in self.tools
         ]
     
-    async def call_tool_directly(self, tool_name: str, arguments: Dict[str, Any]) -> str:
+    async def call_tool_directly(self, tool_name: str, arguments: Dict[str, Any], user_token: Optional[str] = None) -> str:
         """Call a tool directly without going through the agent"""
         try:
-            response = await self.mcp_client.call_tool(tool_name, arguments)
+            response = await self.mcp_client.call_tool(tool_name, arguments, user_token)
             
             if response.success:
                 return json.dumps(response.data, indent=2)

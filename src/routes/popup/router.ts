@@ -4,9 +4,6 @@ import authentication from '../../authUtils/authentication';
 import * as popupController from '../../controllers/popup.controller';
 import validator, { ValidationSource } from '../../helpers/utils/validator';
 import schema from './schema';
-import authorization from '../../authUtils/authorization';
-import assignAction from '../../authUtils/assignAction';
-import { ACTIONS } from '../../helpers/seeder/seed.permission';
 
 const fileUploadHandler = new FileUploadHandler();
 

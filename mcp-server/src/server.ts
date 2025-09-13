@@ -1,14 +1,17 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import axios from 'axios';
 import { ToolManager } from './tools';
 import { ApiClient } from './clients/api-client';
+import { TokenVerifyResponse } from './types';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.MCP_PORT || 3002;
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth-service:8000';
 
 // Middleware
 app.use(cors());
@@ -19,6 +22,50 @@ const apiClient = new ApiClient(process.env.API_BASE_URL || 'http://ecommerce-ap
 
 // Initialize tool manager
 const toolManager = new ToolManager(apiClient);
+
+// Auth middleware function
+const authenticateToken = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Authorization header with Bearer token is required' });
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+
+    // Call auth service to verify token
+    const verifyResponse = await axios.post<TokenVerifyResponse>(
+      `${AUTH_SERVICE_URL}/auth/verify`,
+      {},
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 5000
+      }
+    );
+
+    const { valid, user, error } = verifyResponse.data;
+
+    if (!valid) {
+      return res.status(401).json({ error: error || 'Invalid token' });
+    }
+    
+    // Add user info to request object for use in route handlers
+    (req as any).user = user;
+    next();
+  } catch (error: any) {
+    console.error('Auth middleware error:', error.message);
+    
+    if (error.code === 'ECONNREFUSED') {
+      return res.status(503).json({ error: 'Authentication service unavailable' });
+    }
+    
+    return res.status(401).json({ error: 'Token validation failed' });
+  }
+};
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -35,15 +82,19 @@ app.get('/tools', (req, res) => {
   }
 });
 
-// Execute tool endpoint
-app.post('/execute', async (req, res) => {
+// Execute tool endpoint - now protected with authentication
+app.post('/execute', authenticateToken, async (req, res) => {
   try {
     const { toolName, args } = req.body;
     
     if (!toolName) {
       return res.status(400).json({ error: 'Tool name is required' });
     }
-
+    
+    // User info is available as req.user from the auth middleware
+    const user = (req as any).user;
+    console.log(`Tool execution request from user: ${user.email} (ID: ${user.id})`);
+    
     const result = await toolManager.executeTool(toolName, args);
     res.json({ result });
   } catch (error) {

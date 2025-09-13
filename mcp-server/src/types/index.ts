@@ -56,6 +56,19 @@ export interface AuthResponse {
   message?: string;
 }
 
+// Auth service token verification response
+export interface TokenVerifyResponse {
+  valid: boolean;
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+    roles: string[];
+    is_active: boolean;
+  };
+  error?: string;
+}
+
 export interface MCPTool {
   name: string;
   description: string;

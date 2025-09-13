@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
@@ -66,6 +66,17 @@ class ToolCallResponse(BaseModel):
 
 # Global agent instance
 agent: Optional[EcommerceAgent] = None
+
+# Dependency to get authenticated user and token
+async def get_user_and_token(request: Request, current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Get authenticated user and extract token from request headers"""
+    authorization = request.headers.get("authorization", "")
+    token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else None
+    
+    return {
+        "user": current_user,
+        "token": token
+    }
 
 # Create FastAPI app
 app = FastAPI(
@@ -151,24 +162,27 @@ async def health_check():
         raise HTTPException(status_code=503, detail=f"Agent health check failed: {str(e)}")
 
 @app.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatMessage, current_user: Optional[Dict[str, Any]] = Depends(get_optional_user)):
-    """Chat with the AI agent (optionally authenticated)"""
+async def chat(request: ChatMessage, user_data: Dict[str, Any] = Depends(get_user_and_token)):
+    """Chat with the AI agent (requires authentication)"""
     global agent
     
     if not agent:
         raise HTTPException(status_code=503, detail="Agent not initialized")
     
     try:
-        # Add user context to the message if authenticated
-        enhanced_message = request.message
-        if current_user:
-            user_roles = current_user.get('roles', [])
-            user_name = current_user.get('name', 'Unknown')
-            user_email = current_user.get('email', 'Unknown')
-            user_context = f"[User: {user_name} ({user_email}) - Roles: {', '.join(user_roles)}] "
-            enhanced_message = user_context + request.message
+        current_user = user_data["user"]
+        user_token = user_data["token"]
         
-        response = await agent.chat(enhanced_message, request.chat_history)
+        # Add authenticated user context to the message
+        user_roles = current_user.get('roles', [])
+        user_name = current_user.get('name', 'Unknown')
+        user_email = current_user.get('email', 'Unknown')
+        user_context = f"[Authenticated User: {user_name} ({user_email}) - Roles: {', '.join(user_roles)}] "
+        enhanced_message = user_context + request.message
+        
+        # Pass the user token to the agent so it can forward it to MCP server
+        response = await agent.chat(enhanced_message, request.chat_history, user_token=user_token)
+        
         return ChatResponse(
             response=response, 
             success=True, 
@@ -180,7 +194,7 @@ async def chat(request: ChatMessage, current_user: Optional[Dict[str, Any]] = De
             response=f"I apologize, but I encountered an error: {str(e)}",
             success=False,
             error=str(e),
-            user=current_user
+            user=user_data.get("user") if user_data else None
         )
 
 @app.get("/tools")

@@ -97,8 +97,8 @@ class HTTPMCPClient:
             else:
                 logger.error(f"Failed to load tools after {self.max_retries} attempts")
             
-    async def execute_tool(self, tool_name: str, args: Dict[str, Any]) -> MCPResponse:
-        """Execute a tool on the MCP server"""
+    async def execute_tool(self, tool_name: str, args: Dict[str, Any], user_token: Optional[str] = None) -> MCPResponse:
+        """Execute a tool on the MCP server with optional authentication"""
         try:
             if not self.session:
                 await self.start()
@@ -108,7 +108,12 @@ class HTTPMCPClient:
                 "args": args
             }
             
-            async with self.session.post(f"{self.base_url}/execute", json=payload) as response:
+            # Prepare headers
+            headers = {"Content-Type": "application/json"}
+            if user_token:
+                headers["Authorization"] = f"Bearer {user_token}"
+            
+            async with self.session.post(f"{self.base_url}/execute", json=payload, headers=headers) as response:
                 if response.status == 200:
                     data = await response.json()
                     # MCP server returns {"result": {...}} format
@@ -144,6 +149,10 @@ class HTTPMCPClient:
     def get_tools(self) -> List[MCPTool]:
         """Get the list of available tools"""
         return self.tools
+    
+    async def call_tool(self, tool_name: str, arguments: Dict[str, Any], user_token: Optional[str] = None) -> MCPResponse:
+        """Call a tool directly (alias for execute_tool)"""
+        return await self.execute_tool(tool_name, arguments, user_token)
         
     async def health_check(self) -> bool:
         """Check if the MCP server is healthy with retry mechanism"""
