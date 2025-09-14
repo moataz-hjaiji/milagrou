@@ -46,12 +46,12 @@ async def chat_endpoint(
     user_id: str = Depends(get_authenticated_user_id)
 ):
     """
-    Chat endpoint that processes user messages and returns AI responses
+    Send a message to the user's conversation
     
     - **message**: The user's message text
     - **Authorization**: Bearer token with user authentication
     
-    Returns the AI assistant's reply along with conversation metadata.
+    Creates a conversation if one doesn't exist and adds the message to it.
     """
     try:
         logger.info(f"Chat request from user {user_id}: {request.message}")
@@ -62,8 +62,8 @@ async def chat_endpoint(
                 detail="Message cannot be empty"
             )
 
-        # Process the message
-        response = await chat_service.process_message(user_id, request)
+        # Send the message
+        response = await chat_service.send_message(user_id, request)
         
         logger.info(f"Chat response for user {user_id}: success")
         return response

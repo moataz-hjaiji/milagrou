@@ -10,6 +10,11 @@ from langchain_openai import AzureChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
 from pydantic import BaseModel, Field
+from services.chat_service import chat_service
+from models.conversation import ChatRequest, Message
+from database.conversation_repository import conversation_repo
+import time
+
 
 from http_mcp_client import HTTPMCPClient, MCPTool, MCPResponse
 from intent_detector import IntentDetector, IntentResult
@@ -146,6 +151,98 @@ class EcommerceAgent:
         
         logger.info("✅ EcommerceAgent initialization completed")
 
+    async def send_prompt_to_user(self, prompt_message: str, user_id: str = None, user_token: str = None) -> Dict[str, Any]:
+        """
+        Generate AI-powered questions for missing parameters and save assistant messages
+        """
+        try:
+            # Get previous conversation history if user_id available
+            previous_messages = []
+            if user_id:
+                previous_messages = await chat_service.get_conversation_history(user_id, limit=10)
+                previous_messages = previous_messages.messages if hasattr(previous_messages, 'messages') else []
+            
+            # Create context from previous messages
+            conversation_context = self._build_conversation_context(previous_messages)
+            
+            # Generate AI-powered question using Azure OpenAI
+            ai_question = await self._generate_missing_param_question(
+                prompt_message, 
+                conversation_context
+            )
+            
+            # Save the assistant's question to conversation
+            if user_id and ai_question:
+                assistant_message = Message(
+                    role="assistant", 
+                    content=ai_question,
+                    timestamp=time.time()
+                )
+                await conversation_repo.add_message(user_id, assistant_message)
+                logger.info(f"Saved assistant question to conversation for user {user_id}")
+            logger.info({"question": ai_question, "requires_user_input": True})
+            # Return the generated question (in real implementation, this would be sent to user)
+            return {"question": ai_question, "requires_user_input": True}
+            
+        except Exception as e:
+            logger.error(f"Error in send_prompt_to_user: {e}")
+            return {"question": prompt_message, "requires_user_input": True}
+
+    def _build_conversation_context(self, messages: List) -> str:
+        """Build context string from previous conversation messages"""
+        if not messages:
+            return "No previous conversation."
+        
+        context_parts = []
+        for msg in messages[-5:]:  # Last 5 messages for context
+            role = msg.role if hasattr(msg, 'role') else msg.get('role', 'unknown')
+            content = msg.content if hasattr(msg, 'content') else msg.get('content', '')
+            context_parts.append(f"{role.capitalize()}: {content}")
+        
+        return "\n".join(context_parts)
+
+    async def _generate_missing_param_question(self, original_prompt: str, conversation_context: str) -> str:
+        """Generate AI-powered question for missing parameters"""
+        try:
+            system_message = """You are a helpful e-commerce assistant. Based on the conversation context and missing parameter information, generate a natural, friendly question to ask the user for the missing information.
+
+Guidelines:
+- Be conversational and helpful
+- Ask for specific missing information clearly
+- Reference the conversation context if relevant
+- Keep questions concise but complete
+- Use friendly, customer service tone
+- If multiple parameters are missing, ask for the most important one first"""
+
+            user_message = f"""
+Conversation Context:
+{conversation_context}
+
+Missing Parameter Information:
+{original_prompt}
+
+Please generate a natural question to ask the user for the missing information."""
+
+            messages = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ]
+
+            # Use Azure OpenAI to generate the question
+            response = await self.llm.agenerate_messages([
+                [SystemMessage(content=system_message), HumanMessage(content=user_message)]
+            ])
+            
+            generated_question = response.generations[0][0].message.content
+            logger.debug(f"Generated AI question: {generated_question}")
+            
+            return generated_question
+            
+        except Exception as e:
+            logger.error(f"Error generating AI question: {e}")
+            # Fallback to original prompt
+            return original_prompt
+
     async def initialize(self):
         """Initialize the agent with MCP tools"""
         logger.info("🔄 Starting agent initialization process")
@@ -187,27 +284,23 @@ class EcommerceAgent:
             logger.error(f"❌ Failed to initialize agent: {e}")
             raise
 
-    async def handle_user_request(self, user_input: str, user_token: Optional[str] = None) -> str:
+    async def handle_user_request(self, user_input: str, user_token: Optional[str] = None, user_id: Optional[str] = None) -> str:
         """
         Enhanced method to automatically detect intent, extract parameters, and route requests
         """
         logger.info(f"🎯 Processing user request: '{user_input}'")
         logger.debug(f"User token provided: {'Yes' if user_token else 'No'}")
+        logger.debug(f"User ID provided: {user_id}")
+        
+        # Extract user_id from token if not provided
+        if not user_id and user_token:
+            user_id = extract_user_id_from_token(user_token)
         
         try:
             # Step 1: Detect intent
             logger.info("📍 Step 1: Detecting user intent")
             intent = self.intent_detector.detect_intent(user_input)
             logger.info(f" Intent detected: {intent}")
-            # if not intent or intent.confidence < 0.3:
-            #     logger.warning(f"❌ Intent detection failed or low confidence ({intent.confidence if intent else 0:.2f})")
-            #     return ("I'm not sure what you'd like to do. I can help you with:\n"
-            #            "• Login/Register: 'login with phone +1234567890' or 'create account'\n"
-            #            "• Browse products: 'show me products' or 'search for shoes'\n"
-            #            "• Cart management: 'add to cart', 'show my cart'\n"
-            #            "• Orders: 'place order', 'show my orders'\n"
-            #            "• Profile: 'show my profile', 'my addresses'\n\n"
-            #            "What would you like to do?")
             
             logger.info(f"✅ Intent detected: '{intent.tool_name}' (confidence: {intent.confidence:.2f})")
             
@@ -234,62 +327,56 @@ class EcommerceAgent:
             logger.info("✅ Product reference resolution completed")
             
             # # Step 4: Validate parameters
-            logger.info("🔍 Step 4: Validating parameters")
+
+            logger.info(f"🔍 Step 4: Validating parameters resolved params {resolved_params}")
             validated_params = self.parameter_validator.validate_tool_parameters(
                 intent.tool_name, 
-                resolved_params
+                    
             )
-            
-            # if 'validation_errors' in validated_params:
-            #     error_msg = "Parameter validation failed: " + ", ".join(validated_params['validation_errors'])
-            #     logger.error(f"❌ {error_msg}")
-            #     return error_msg
-            
-            # Step 5: Check for missing required parameters
             logger.info("📋 Step 5: Checking for missing required parameters")
-            validated_params = await self.missing_param_handler.prompt_for_missing_parameters(
-                intent.tool_name,
-                validated_params,
-                send_prompt_fn=self.send_prompt_to_user  # Your async function to get user input
-            )
+            user_id = extract_user_id_from_token(user_token) if user_token else None
             
-            if missing_params:
+            max_attempts = 3  # Prevent infinite loops
+            attempts = 0
+            logger.debug(f"Initial validated parameters:  attempts: {attempts} max_attempts: {max_attempts}")
+            while attempts < max_attempts:
+                logger.debug(f"Attempt {attempts + 1} to check for missing parameters")
+                missing_params = self.parameter_validator.get_missing_parameters(
+                    intent.tool_name, 
+                    validated_params
+                )
+                
+                if not missing_params:
+                    logger.info("✅ All required parameters are present")
+                    break
+                
+                attempts += 1
+                logger.info(f"❌ Missing parameters (attempt {attempts}/{max_attempts}): {missing_params}")
+                
+                # Generate missing parameters message
                 missing_msg = self.parameter_validator.format_missing_params_message(
                     intent.tool_name, 
                     missing_params
                 )
-                logger.warning(f"❌ Missing required parameters: {missing_params}")
-                return f"{missing_msg}\n\nPlease provide the missing information and try again."
-            
-            # logger.info("✅ All required parameters are present")
-            
-            # # Step 6: Execute the tool
-            # logger.info(f"🚀 Step 6: Executing tool '{intent.tool_name}'")
-            # try:
-            #     response = await self.mcp_client.execute_tool(
-            #         intent.tool_name, 
-            #         validated_params, 
-            #         user_token=user_token
-            #     )
                 
-            #     logger.debug(f"Tool execution response: success={response.success}")
+                # Use AI to generate a better question and save it
+                prompt_result = await self.send_prompt_to_user(
+                    missing_msg, 
+                    user_id=user_id, 
+                    user_token=user_token
+                )
                 
-            #     if response.success:
-            #         logger.info(f"✅ Tool '{intent.tool_name}' executed successfully")
-            #         formatted_response = self.response_formatter.format_tool_response(
-            #             intent.tool_name, 
-            #             response.data
-            #         )
-            #         logger.info("✅ Response formatted successfully")
-            #         return formatted_response
-            #     else:
-            #         error_msg = f"Sorry, I couldn't complete that request: {response.error}"
-            #         logger.error(f"❌ Tool execution failed: {response.error}")
-            #         return error_msg
-                    
-            # except Exception as e:
-            #     logger.error(f"❌ Exception during tool execution: {e}")
-            #     return f"I encountered an error while processing your request: {str(e)}"
+                # In a real implementation, you would wait for user input here
+                # For now, we'll break the loop and return the AI-generated question
+                if prompt_result.get("requires_user_input"):
+                    ai_question = prompt_result.get("question", missing_msg)
+                    return f"I need more information to help you:\n\n{ai_question}"
+            
+            if attempts >= max_attempts:
+                logger.warning(f"❌ Max attempts reached for missing parameters: {missing_params}")
+                return "I'm having trouble getting all the information I need. Please try rephrasing your request with more details."
+        
+                
                 
         except Exception as e:
             logger.error(f"❌ Unexpected error in handle_user_request: {e}")
@@ -304,60 +391,25 @@ class EcommerceAgent:
                 logger.error("❌ Agent not initialized")
                 raise RuntimeError("Agent not initialized")
             
-            # Set the user token for all tools if provided
-            # if user_token:
-            #     logger.info("🔐 Setting user token for all tools")
-            #     for tool in self.tools:
-            #         if hasattr(tool, 'set_user_token'):
-            #             tool.set_user_token(user_token)
-            
-            # Convert chat history to LangChain messages
-            # messages = []
-            # if chat_history:
-            #     logger.info(f"📜 Processing {len(chat_history)} chat history messages")
-            #     for msg in chat_history:
-            #         # Ensure the message has the required fields
-            #         if not isinstance(msg, dict):
-            #             continue
-                    
-            #         # Check if the message has the required 'role' field
-            #         if "role" not in msg:
-            #             logger.warning(f"Chat history message missing 'role' field: {msg}")
-            #             continue
-                    
-            #         # Check if the message has content
-            #         content = msg.get("content", msg.get("message", ""))
-            #         if not content:
-            #             logger.warning(f"Chat history message missing content: {msg}")
-            #             continue
-                    
-            #         if msg["role"] == "user":
-            #             messages.append(HumanMessage(content=content))
-            #         elif msg["role"] == "assistant":
-            #             messages.append(AIMessage(content=content))
-            #         else:
-            #             logger.warning(f"Unknown role in chat history: {msg['role']}")
-            
+
             # Try enhanced handling first
             logger.info("🎯 Attempting enhanced request handling")
-            enhanced_result = await self.handle_user_request(message, user_token)
-            # logger.info(f"✅ Enhanced handling completed: {enhanced_result}")
-            # If enhanced handling provides a good result, use it
-            # if not enhanced_result.startswith("I'm not sure what you'd like to do"):
-            #     logger.info("✅ Enhanced handling successful")
-            #     return enhanced_result
+            user_id = None
+            if user_token:
+                user_id = extract_user_id_from_token(user_token)
+                logger.info(f"Extracted user_id: {user_id}")
+                
+                if user_id:
+                    chat_request = ChatRequest(message=message)
+                    await chat_service.send_message(user_id, chat_request)
+                    logger.info("✅ Message saved to conversation")
             
-            # Fall back to LangChain agent
-            # logger.info("🤖 Falling back to LangChain agent")
-            # result = await self.agent_executor.ainvoke({
-            #     "input": message,
-            #     "chat_history": messages
-            # })
-            result = await self.handle_user_request(message, user_token)
+            # Pass user_id to handle_user_request for better parameter handling
+            enhanced_result = await self.handle_user_request(message, user_token, user_id=user_id)
+            result = await self.handle_user_request(message, user_token, user_id=user_id)
             # logger.info(result)
             # logger.info("✅ LangChain agent processing completed")
-            # return result["output"]
-            return "test ....."
+            return result["output"]
             
         except Exception as e:
             logger.error(f"❌ Error processing chat message: {e}")

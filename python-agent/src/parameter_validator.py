@@ -94,67 +94,10 @@ class ParameterValidator:
         errors = []
         
         try:
-            # Tool-specific validation
-            if tool_name == 'create_order':
-                # Validate required fields
-                if not validated_params.get('orderType'):
-                    errors.append('orderType is required')
-                elif validated_params['orderType'] not in ['GIFT', 'RESERVATION', 'NORMAL']:
-                    errors.append('orderType must be GIFT, RESERVATION, or NORMAL')
-                
-                if not validated_params.get('InvoicePaymentMethods'):
-                    errors.append('InvoicePaymentMethods is required')
-                elif not isinstance(validated_params['InvoicePaymentMethods'], list) or len(validated_params['InvoicePaymentMethods']) == 0:
-                    errors.append('InvoicePaymentMethods must be a non-empty array')
-                
-                if not validated_params.get('deliveryType'):
-                    errors.append('deliveryType is required')
-                elif validated_params['deliveryType'] not in ['DELIVERY', 'PICKUP']:
-                    errors.append('deliveryType must be exactly "DELIVERY" or "PICKUP"')
-                
-                # Validate conditional requirements
-                if validated_params.get('orderType') == 'RESERVATION' and not validated_params.get('reservationDate'):
-                    errors.append('reservationDate is required for RESERVATION orders')
-                
-                if validated_params.get('deliveryType') == 'DELIVERY' and not validated_params.get('addressId'):
-                    errors.append('addressId is required for DELIVERY orders')
-            
-            elif tool_name == 'add_to_cart':
-                if not validated_params.get('productId'):
-                    errors.append('productId is required')
-                
-                if 'quantity' in validated_params:
-                    try:
-                        quantity = int(validated_params['quantity'])
-                        if quantity <= 0:
-                            errors.append('quantity must be greater than 0')
-                        else:
-                            validated_params['quantity'] = quantity
-                    except (ValueError, TypeError):
-                        errors.append('quantity must be a valid number')
-            
-            elif tool_name in ['login_user', 'register_user']:
-                if 'phone' in validated_params:
-                    # Basic phone validation
-                    phone = validated_params['phone'].strip()
-                    if not phone:
-                        errors.append('phone number cannot be empty')
-                    else:
-                        validated_params['phone'] = phone
-                        
-                if tool_name == 'register_user' and 'email' in validated_params:
-                    # Basic email validation
-                    import re
-                    email = validated_params['email'].strip()
-                    if email and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
-                        errors.append('invalid email format')
-            
-            if errors:
-                logger.error(f"❌ Validation failed for '{tool_name}': {errors}")
-                return {'validation_errors': errors}
-            else:
-                logger.info(f"✅ Validation successful for '{tool_name}'")
-                logger.debug(f"Validated parameters: {validated_params}")
+            logger.info(f"✅ Validation successful for '{tool_name}'")
+            logger.debug(f"Validated parameters: {validated_params}")
+            logger.info(f"validation: {validated_params} for tool: {tool_name}")
+            return validated_params
                 
         except Exception as e:
             logger.error(f"Error during validation for '{tool_name}': {e}")

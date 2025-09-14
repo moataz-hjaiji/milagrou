@@ -58,25 +58,62 @@ class ConversationRepository:
         try:
             current_time = time.time()
             
+            # Extract just the user message from the content if it contains auth info
+            clean_content = self._extract_user_message(message.content)
+            
+            # Create a clean message object
+            clean_message = Message(
+                role=message.role,
+                content=clean_content,
+                timestamp=message.timestamp
+            )
+            
             result = await self.collection.update_one(
                 {"user_id": user_id},
                 {
-                    "$push": {"messages": message.dict()},
+                    "$push": {"messages": clean_message.dict()},
                     "$set": {"updated_at": current_time}
-                }
+                },
+                upsert=True
             )
             
-            success = result.modified_count > 0
+            success = result.modified_count > 0 or result.upserted_id is not None
             if success:
-                logger.info(f"Added {message.role} message to conversation for user {user_id}")
+                # Generate a simple message ID for logging
+                message_id = f"msg_{int(message.timestamp)}"
+                
+                if result.upserted_id:
+                    logger.info(f"Created new conversation and added {message.role} message [{message_id}] for user {user_id}: '{clean_content[:100]}{'...' if len(clean_content) > 100 else ''}'")
+                else:
+                    logger.info(f"Added {message.role} message [{message_id}] to existing conversation for user {user_id}: '{clean_content[:100]}{'...' if len(clean_content) > 100 else ''}'")
             else:
-                logger.warning(f"No conversation found to add message for user {user_id}")
+                logger.warning(f"Failed to add message for user {user_id}")
             
             return success
             
         except Exception as e:
             logger.error(f"Error adding message to conversation for user {user_id}: {e}")
             raise
+
+    def _extract_user_message(self, content: str) -> str:
+        """Extract the actual user message from content that may contain authentication info"""
+        try:
+            # Check if content contains authentication pattern
+            if "[Authenticated User:" in content and "] " in content:
+                # Find the end of the authentication block
+                auth_end = content.find("] ") + 2
+                if auth_end > 1 and auth_end < len(content):
+                    # Extract everything after the authentication info
+                    clean_message = content[auth_end:].strip()
+                    logger.debug(f"Extracted clean message: '{clean_message}' from: '{content[:100]}...'")
+                    return clean_message
+            
+            # If no authentication pattern found, return original content
+            return content.strip()
+            
+        except Exception as e:
+            logger.warning(f"Error extracting user message from content, using original: {e}")
+            return content.strip()
 
     async def get_messages(self, user_id: str, limit: Optional[int] = None) -> List[Message]:
         """Get all messages for a user's conversation"""
