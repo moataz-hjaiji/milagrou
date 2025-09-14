@@ -21,6 +21,7 @@ export class CartTools {
         name: 'add_to_cart',
         description: 'Add item to shopping cart',
         protected: true,
+        test: ["userId:string:required", "productId:string:required", "quantity:number:optional"],
         inputSchema: {
           type: 'object',
           properties: {

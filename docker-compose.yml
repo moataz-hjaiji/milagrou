@@ -47,6 +47,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3002:3002"
+    container_name: mcp-server
     environment:
       - API_BASE_URL=http://ecommerce-api:3000/api
       - JWT_SECRET=${JWT_SECRET:-your-jwt-secret}
@@ -106,17 +107,24 @@ services:
       - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
       - AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME=${AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME}
       - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+      # JWT Configuration
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret}
+      - JWT_ALGORITHM=HS256
       # MCP Configuration
+      - MCP_SERVER_URL=http://mcp-server:3002
       - MCP_SERVER_COMMAND=node
       - MCP_SERVER_ARGS=../mcp-server/dist/server.js
       - ECOMMERCE_API_URL=http://ecommerce-api:3000/api
       - AUTH_SERVICE_URL=http://auth-service:8000
       - PORT=8000
+      - HOST=0.0.0.0
       # Database Configuration
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/milagro?authSource=admin
+      - DATABASE_NAME=milagro
     networks:
       - ecommerce-network
     depends_on:
+      - mongodb
       - mcp-server
       - auth-service
     command: python run_api.py

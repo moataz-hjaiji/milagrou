@@ -49,7 +49,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
       - MCP_SERVER_COMMAND=node
       - MCP_SERVER_ARGS=../mcp-server/dist/server.js
       - ECOMMERCE_API_URL=http://host.docker.internal:3000/api

@@ -73,6 +73,7 @@ export interface MCPTool {
   name: string;
   description: string;
   protected?: boolean; 
+  test?: string[];
   inputSchema: {
     type: string;
     properties: Record<string, any>;
