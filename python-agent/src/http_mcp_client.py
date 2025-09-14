@@ -27,6 +27,7 @@ class HTTPMCPClient:
         self.tools: List[MCPTool] = []
         self.max_retries = max_retries
         self.retry_delay = retry_delay
+        self.user_token: Optional[str] = None
         
     async def start(self):
         """Initialize the HTTP client session"""

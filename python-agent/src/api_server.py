@@ -29,6 +29,7 @@ class ChatResponse(BaseModel):
     response: str
     success: bool
     error: Optional[str] = None
+    data: Optional[Dict[str, Any]] = None
     user: Optional[Dict[str, Any]] = None
 
 class AuthenticatedChatMessage(BaseModel):
@@ -117,7 +118,7 @@ async def startup_event():
             "api_version": os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
         }
         
-        mcp_server_url = os.getenv("MCP_SERVER_URL", "http://mcp-server:3002")
+        mcp_server_url = os.getenv("MCP_SERVER_URL", "http://localhost:3002")
         
         if not azure_config["api_key"] or not azure_config["endpoint"]:
             raise ValueError("AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT must be set")
@@ -195,13 +196,24 @@ async def chat(request: ChatMessage, user_data: Dict[str, Any] = Depends(get_use
         enhanced_message = user_context + request.message
         
         # Pass the user token to the agent so it can forward it to MCP server
-        response = await agent.chat(enhanced_message, request.chat_history, user_token=user_token)
+        agent_response = await agent.chat(enhanced_message, request.chat_history, user_token=user_token)
         
-        return ChatResponse(
-            response=response, 
-            success=True, 
-            user=current_user
-        )
+        # Handle structured response from agent
+        if isinstance(agent_response, dict):
+            return ChatResponse(
+                response=agent_response.get("response", ""),
+                success=agent_response.get("success", True),
+                error=agent_response.get("error"),
+                data=agent_response.get("data"),
+                user=current_user
+            )
+        else:
+            # Fallback for string responses
+            return ChatResponse(
+                response=str(agent_response),
+                success=True,
+                user=current_user
+            )
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
         return ChatResponse(
