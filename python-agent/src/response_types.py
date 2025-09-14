@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Dict, Any, List, Optional
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 class ResponseType(str, Enum):
     """Enum for different types of responses from the ecommerce agent"""

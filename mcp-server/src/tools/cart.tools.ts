@@ -93,7 +93,9 @@ export class CartTools {
 
   private async getCart(userId: string) {
     try {
-      const response = await this.apiClient.get(`/cart/${userId}`);
+      const response = await this.apiClient.post('/carts/me', {
+        browserId: 'mcp-client' 
+      });
       return {
         success: true,
         data: response.data
@@ -108,10 +110,12 @@ export class CartTools {
 
   private async addToCart(userId: string, productId: string, quantity: number) {
     try {
-      const response = await this.apiClient.post('/cart/add', {
-        userId,
-        productId,
-        quantity
+      const response = await this.apiClient.post('/carts/add', {
+        browserId: 'mcp-client',
+        item: {
+          product: productId, 
+          quantity
+        }
       });
       return {
         success: true,
@@ -127,7 +131,10 @@ export class CartTools {
 
   private async removeFromCart(userId: string, productId: string) {
     try {
-      const response = await this.apiClient.delete(`/cart/${userId}/item/${productId}`);
+      const response = await this.apiClient.delete('/carts/remove', {
+        browserId: 'mcp-client',
+        itemId: productId
+      });
       return {
         success: true,
         data: response.data
@@ -142,8 +149,10 @@ export class CartTools {
 
   private async updateCartItem(userId: string, productId: string, quantity: number) {
     try {
-      const response = await this.apiClient.put(`/cart/${userId}/item/${productId}`, {
-        quantity
+      const response = await this.apiClient.put('/carts/quantity', {
+        browserId: 'mcp-client',
+        itemId: productId,
+        action: quantity > 0 ? 'increment' : 'decrement'
       });
       return {
         success: true,
@@ -159,10 +168,12 @@ export class CartTools {
 
   private async clearCart(userId: string) {
     try {
-      const response = await this.apiClient.delete(`/cart/${userId}`);
+      // For clearing cart, we'll need to implement a different approach
+      // since the API doesn't have a direct clear endpoint
+      // We could get all items and remove them one by one, or implement a clear endpoint
       return {
-        success: true,
-        data: response.data
+        success: false,
+        error: 'Clear cart functionality not implemented in API'
       };
     } catch (error: any) {
       return {
