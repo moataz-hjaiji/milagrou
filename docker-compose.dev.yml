@@ -31,15 +31,18 @@ services:
     build:
       context: ./mcp-server
       dockerfile: Dockerfile.dev
+    ports:
+      - "3002:3002"
     environment:
       - API_BASE_URL=http://host.docker.internal:3000/api
       - JWT_SECRET=your-jwt-secret-here
+      - MCP_PORT=3002
     volumes:
       - ./mcp-server:/app
       - /app/node_modules
     networks:
       - ecommerce-network
-    command: npm run dev
+    command: npx ts-node src/server.ts
 
   # Python LangChain Agent (development)
   python-agent:
@@ -49,9 +52,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
-      - MCP_SERVER_COMMAND=node
-      - MCP_SERVER_ARGS=../mcp-server/dist/server.js
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME:-gpt-4o}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}
+      - MCP_SERVER_URL=http://mcp-server:3002
       - ECOMMERCE_API_URL=http://host.docker.internal:3000/api
       - AUTH_SERVICE_URL=http://auth-service:8000
       - PORT=8000

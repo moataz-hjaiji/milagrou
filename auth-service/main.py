@@ -132,12 +132,17 @@ app.include_router(auth_router)
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    try:
+        users_count = await user_db.get_user_count()
+    except Exception:
+        users_count = 0
+    
     return {
         "status": "healthy",
         "service": settings.app_name,
         "version": settings.app_version,
         "uptime": time.time(),
-        "users_count": user_db.get_user_count(),
+        "users_count": users_count,
         "debug": settings.debug
     }
 

@@ -91,11 +91,29 @@ app.post('/execute', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Tool name is required' });
     }
     
-    // User info is available as req.user from the auth middleware
     const user = (req as any).user;
     console.log(`Tool execution request from user: ${user.email} (ID: ${user.id})`);
     
-    const result = await toolManager.executeTool(toolName, args);
+    // Add user context to args only for tools that need it
+    let argsWithUser = { ...args };
+    
+    // Only add user context for tools that require it
+    if (toolName.startsWith('get_cart') || toolName.startsWith('add_to_cart') || 
+        toolName.startsWith('remove_from_cart') || toolName.startsWith('update_cart') || 
+        toolName.startsWith('clear_cart') || toolName.startsWith('get_order') || 
+        toolName.startsWith('create_order') || toolName.startsWith('get_profile') || 
+        toolName.startsWith('update_profile') || toolName.startsWith('get_address') || 
+        toolName.startsWith('add_address') || toolName.startsWith('update_address') || 
+        toolName.startsWith('delete_address')) {
+      argsWithUser = {
+        ...args,
+        // Only add user context if not already provided
+        userId: args.userId || user.id,
+        userEmail: args.userEmail || user.email
+      };
+    }
+    
+    const result = await toolManager.executeTool(toolName, argsWithUser);
     res.json({ result });
   } catch (error) {
     console.error('Tool execution error:', error);
