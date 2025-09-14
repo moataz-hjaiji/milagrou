@@ -69,7 +69,10 @@ export class ProductTools {
   async executeTool(toolName: string, args: any) {
     switch (toolName) {
       case 'get_products':
-        return await this.apiClient.get('/products', args);
+        console.log(`[ProductTools] Calling /products with args:`, args);
+        const result = await this.apiClient.get('/products', args);
+        console.log(`[ProductTools] API response:`, JSON.stringify(result, null, 2));
+        return result;
       
       case 'get_product':
         return await this.apiClient.get(`/products/${args.id}`);

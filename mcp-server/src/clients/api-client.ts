@@ -19,6 +19,8 @@ export class ApiClient {
       if (this.authToken) {
         config.headers.Authorization = `Bearer ${this.authToken}`;
       }
+      console.log(`[ApiClient] Making request to: ${config.baseURL}${config.url}`);
+      console.log(`[ApiClient] Request params:`, config.params);
       return config;
     });
 
@@ -42,8 +44,19 @@ export class ApiClient {
 
   async get<T = any>(endpoint: string, params?: any): Promise<ApiResponse<T>> {
     try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.client.get(endpoint, { params });
-      return response.data;
+      const response: AxiosResponse<any> = await this.client.get(endpoint, { params });
+      
+      if (response.data.statusCode && response.data.statusCode === 200) {
+        return {
+          success: true,
+          data: response.data
+        };
+      } else {
+        return {
+          success: false,
+          error: response.data.message || 'API returned error'
+        };
+      }
     } catch (error: any) {
       return {
         success: false,
@@ -76,9 +89,9 @@ export class ApiClient {
     }
   }
 
-  async delete<T = any>(endpoint: string): Promise<ApiResponse<T>> {
+  async delete<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.client.delete(endpoint);
+      const response: AxiosResponse<ApiResponse<T>> = await this.client.delete(endpoint, { data });
       return response.data;
     } catch (error: any) {
       return {

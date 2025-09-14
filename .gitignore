@@ -30,3 +30,4 @@ coverage
 **/mongo-data/**
 mongo-data
 ~/
+config.bat
