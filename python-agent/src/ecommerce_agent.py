@@ -194,14 +194,6 @@ class EcommerceTool(BaseTool):
         """Set the user token for authentication"""
         self.user_token = token
         logger.debug(f"Set user token for tool '{self.name}'")
-            logger.error(f"Error running tool {self.name}: {e}")
-            error_response = create_response(
-                ResponseType.ERROR,
-                success=False,
-                message=f"Tool execution error: {str(e)}",
-                error=str(e)
-            )
-            return json.dumps(error_response.dict(), indent=2)
 
 def create_structured_tools(mcp_client: HTTPMCPClient):
     """Create StructuredTools for specific MCP tools"""
@@ -952,7 +944,7 @@ Please generate a natural question to ask the user for the missing information."
             logger.info(f"🔍 Step 4: Validating parameters resolved params {resolved_params}")
             validated_params = self.parameter_validator.validate_tool_parameters(
                 intent.tool_name, 
-                    
+                resolved_params
             )
             logger.info("📋 Step 5: Checking for missing required parameters")
             user_id = extract_user_id_from_token(user_token) if user_token else None

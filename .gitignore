@@ -30,3 +30,5 @@ coverage
 **/mongo-data/**
 mongo-data
 ~/
+
+__pycache__
