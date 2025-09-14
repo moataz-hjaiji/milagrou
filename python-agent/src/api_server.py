@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 from http_mcp_client import HTTPMCPClient
 from ecommerce_agent import EcommerceAgent
 from auth_utils import get_current_user, get_optional_user, require_admin, auth_service
+from database.mongodb import db_manager
+from routers.chat import router as chat_router
 
 # Load environment variables
 load_dotenv()
@@ -94,12 +96,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include routers
+app.include_router(chat_router)
+
 @app.on_event("startup")
 async def startup_event():
-    """Initialize the agent on startup"""
+    """Initialize the agent and database on startup"""
     global agent
     
     try:
+        # Initialize database connection
+        logger.info("Initializing database connection...")
+        await db_manager.connect_to_mongo()
+        
         # Get Azure OpenAI configuration
         azure_config = {
             "api_key": os.getenv("AZURE_OPENAI_API_KEY"),
@@ -123,9 +132,10 @@ async def startup_event():
         await agent.initialize()
         
         logger.info("E-commerce agent initialized successfully with Azure OpenAI")
+        logger.info("Chat functionality is now available at /chat")
         
     except Exception as e:
-        logger.error(f"Failed to initialize agent: {e}")
+        logger.error(f"Failed to initialize application: {e}")
         raise
 
 @app.on_event("shutdown")
@@ -136,6 +146,10 @@ async def shutdown_event():
     if agent:
         await agent.shutdown()
         logger.info("Agent shutdown complete")
+    
+    # Close database connection
+    await db_manager.close_mongo_connection()
+    logger.info("Database connection closed")
 
 @app.get("/")
 async def root():
