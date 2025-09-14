@@ -20,12 +20,15 @@ export class CartTools {
       {
         name: 'add_to_cart',
         description: 'Add item to shopping cart',
+        protected: true,
         inputSchema: {
           type: 'object',
           properties: {
             userId: { type: 'string', description: 'User ID' },
             productId: { type: 'string', description: 'Product ID to add' },
-            quantity: { type: 'number', description: 'Quantity to add', default: 1 }
+            quantity: { type: 'number', description: 'Quantity to add', default: 1 },
+            deliveryType: { type: 'string', description: 'Delivery type - MUST be exactly "DELIVERY" or "PICKUP" (case-sensitive). Do NOT use "standard" or any other value.'}
+
           },
           required: ['userId', 'productId']
         }
@@ -108,6 +111,11 @@ export class CartTools {
 
   private async addToCart(userId: string, productId: string, quantity: number) {
     try {
+      console.log(`Adding to cart`, {
+        userId,
+        productId,
+        quantity
+      });
       const response = await this.apiClient.post('/cart/add', {
         userId,
         productId,

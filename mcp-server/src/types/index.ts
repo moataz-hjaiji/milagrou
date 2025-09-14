@@ -72,6 +72,7 @@ export interface TokenVerifyResponse {
 export interface MCPTool {
   name: string;
   description: string;
+  protected?: boolean; 
   inputSchema: {
     type: string;
     properties: Record<string, any>;

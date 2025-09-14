@@ -23,7 +23,8 @@ export default {
     giftMsg: Joi.string(),
     deliveryType: Joi.string()
       .valid(DeliveryType.DELIVERY, DeliveryType.PICKUP)
-      .required(),
+      .optional()
+      .default(DeliveryType.DELIVERY),
     orderType: Joi.string()
       .valid(OrderType.GIFT, OrderType.RESERVATION, OrderType.NORMAL)
       .required(),

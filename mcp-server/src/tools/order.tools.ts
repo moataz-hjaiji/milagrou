@@ -31,16 +31,75 @@ export class OrderTools {
       },
       {
         name: 'create_order',
-        description: 'Create new order from cart',
+        description: 'Create new order from cart. All required fields must be provided.',
         inputSchema: {
           type: 'object',
           properties: {
-            shippingAddress: { type: 'string', description: 'Shipping address ID' },
-            paymentMethod: { type: 'string', description: 'Payment method' },
-            promoCode: { type: 'string', description: 'Promo code (optional)' },
-            deliveryType: { type: 'string', description: 'must be a DELIVERY or PICKUP' }
+            orderType: {
+              type: 'string',
+              enum: ['GIFT', 'RESERVATION', 'NORMAL'],
+              description: 'Type of order - GIFT, RESERVATION, or NORMAL'
+            },
+            InvoicePaymentMethods: {
+              type: 'array',
+              items: { type: 'number' },
+              description: 'Array of payment method IDs (required)',
+              minItems: 1
+            },
+            deliveryType: { 
+              type: 'string', 
+              enum: ['DELIVERY', 'PICKUP'],
+              description: 'Delivery type - MUST be exactly "DELIVERY" or "PICKUP"' 
+            },
+            
+            // Optional but commonly used fields
+            userId: { 
+              type: 'string', 
+              description: 'User ID (optional if using auth token)' 
+            },
+            addressId: { 
+              type: 'string', 
+              description: 'Address ID for delivery orders' 
+            },
+            firstName: { 
+              type: 'string', 
+              description: 'Customer first name' 
+            },
+            lastName: { 
+              type: 'string', 
+              description: 'Customer last name' 
+            },
+            phoneNumber: { 
+              type: 'string', 
+              description: 'Customer phone number' 
+            },
+            email: { 
+              type: 'string', 
+              description: 'Customer email' 
+            },
+            note: { 
+              type: 'string', 
+              description: 'Order notes (optional)' 
+            },
+            giftMsg: { 
+              type: 'string', 
+              description: 'Gift message (for GIFT orders)' 
+            },
+            code: { 
+              type: 'string', 
+              description: 'Promo/discount code (optional)' 
+            },
+            reservationDate: { 
+              type: 'string', 
+              format: 'date-time',
+              description: 'Reservation date (for RESERVATION orders)' 
+            },
+            browserId: { 
+              type: 'string', 
+              description: 'Browser session ID for guest orders' 
+            }
           },
-          required: ['shippingAddress', 'paymentMethod', 'deliveryType']
+          required: ['orderType', 'InvoicePaymentMethods', 'deliveryType']
         }
       },
       {
@@ -77,7 +136,50 @@ export class OrderTools {
         return await this.apiClient.get(`/orders/${args.id}`);
       
       case 'create_order':
-        return await this.apiClient.post('/orders/checkout', args);
+        console.log('create_order called with args:', JSON.stringify(args, null, 2));
+        
+        // Validate required fields
+        const errors = [];
+        
+        if (!args.orderType) {
+          errors.push('orderType is required');
+        } else if (!['GIFT', 'RESERVATION', 'NORMAL'].includes(args.orderType)) {
+          errors.push('orderType must be GIFT, RESERVATION, or NORMAL');
+        }
+        
+        if (!args.InvoicePaymentMethods || !Array.isArray(args.InvoicePaymentMethods) || args.InvoicePaymentMethods.length === 0) {
+          errors.push('InvoicePaymentMethods is required and must be a non-empty array');
+        }
+        
+        if (!args.deliveryType) {
+          errors.push('deliveryType is required');
+        } else if (!['DELIVERY', 'PICKUP'].includes(args.deliveryType)) {
+          errors.push('deliveryType must be exactly "DELIVERY" or "PICKUP"');
+        }
+        
+        // Validate conditional requirements
+        if (args.orderType === 'RESERVATION' && !args.reservationDate) {
+          errors.push('reservationDate is required for RESERVATION orders');
+        }
+        
+        if (args.deliveryType === 'DELIVERY' && !args.addressId) {
+          errors.push('addressId is required for DELIVERY orders');
+        }
+        
+        if (errors.length > 0) {
+          throw new Error(`Validation failed: ${errors.join(', ')}`);
+        }
+        
+        console.log('Sending to API /orders/checkout:', JSON.stringify(args, null, 2));
+        
+        try {
+          const result = await this.apiClient.post('/orders/checkout', args);
+          console.log('API response:', JSON.stringify(result, null, 2));
+          return result;
+        } catch (error) {
+          console.error('API call failed:', error);
+          throw error;
+        }
       
       case 'cancel_order':
         return await this.apiClient.delete(`/orders/${args.id}`);
