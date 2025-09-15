@@ -717,7 +717,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
             description="Add item to shopping cart",
             args_schema=AddToCartInput
         ),
-        StructuredTool.from_function(
+         StructuredTool.from_function(
             func=remove_from_cart,
             name="remove_from_cart",
             description="Remove item from shopping cart",
@@ -825,9 +825,9 @@ class EcommerceAgent:
             {conversation_context}
 
             Available intents and their requirements:
-            - get_products: Optional[page, limit, category, search, minPrice, maxPrice]
-            - search_products: Required[query], Optional[limit]
-            - get_product: Required[id]
+            - get_products: Optional[page, limit, category, search, minPrice, maxPrice] - Returns paginated product list
+            - search_products: Required[query], Optional[limit] - Returns paginated search results
+            - get_product: Required[id] - Returns single product details
             - add_to_cart: Required[productId], Optional[quantity], Requires Auth
             - remove_from_cart: Required[productId], Requires Auth
             - update_cart_item: Required[productId, quantity], Requires Auth
@@ -838,6 +838,12 @@ class EcommerceAgent:
             - register: Required[email, password, name]
             - general_chat: No specific requirements
 
+            SPECIAL NOTES FOR PRODUCT INTENTS:
+            - For get_products and search_products: Always consider pagination parameters (page, limit)
+            - Default limit should be 10 if not specified
+            - These intents must return structured product data with pagination info
+            - Response should include both user-friendly text AND structured product objects
+
             Respond in JSON format:
             {{
                 "intent": "intent_name",
@@ -846,7 +852,9 @@ class EcommerceAgent:
                 "required_parameters": ["param1", "param2"],
                 "missing_info": ["missing_param1"],
                 "extracted_parameters": {{"param": "value"}},
-                "reasoning": "Brief explanation of the analysis"
+                "reasoning": "Brief explanation of the analysis",
+                "expects_paginated_response": true/false,
+                "response_type": "product_list|product_detail|cart_operation|auth|general"
             }}
             """
 
@@ -1450,14 +1458,33 @@ Please generate a natural question to ask the user for the missing information."
             4. View cart contents
             5. Provide general assistance
             
-            When users ask for products, use the appropriate tools to search or get product information.
-            When users want to manage their cart, use the cart-related tools.
-            Always be helpful, friendly, and provide clear information.
+            IMPORTANT PRODUCT RESPONSE REQUIREMENTS:
+            - When users ask for products, ALWAYS use the appropriate tools to search or get product information
+            - For product queries (browsing, searching, or listing products), your response MUST include:
+              1. A clear, user-friendly description of the products found
+              2. The complete product data in a structured format within your response
+              3. Pagination information (current page, total pages, items per page) when applicable
+              4. Clear indication of how many products were found and displayed
             
-            If you need user authentication for cart operations, let them know they need to log in first.
-            When displaying product information, include relevant details like name, price, description, and availability.
+            - When displaying product lists, structure your response like this:
+              "I found X products for you. Here are the results (page Y of Z):
+              
+              [User-friendly product descriptions]
+              
+              Product Data:
+              {{\"products\": [...], \"pagination\": {{\"page\": 1, \"limit\": 10, \"total\": X, \"totalPages\": Y}}}}"
             
-            Use the available tools to fulfill user requests and provide accurate, up-to-date information."""
+            - For single product details, include the complete product object in your response
+            - Always mention pagination details when showing product lists
+            - If no products are found, clearly state this and suggest alternatives
+            
+            CART AND AUTH REQUIREMENTS:
+            - When users want to manage their cart, use the cart-related tools
+            - If you need user authentication for cart operations, let them know they need to log in first
+            - Always be helpful, friendly, and provide clear information
+            
+            Use the available tools to fulfill user requests and provide accurate, up-to-date information.
+            Ensure that product-related responses always contain the actual product data for frontend consumption."""
 
             # Create the prompt template
             prompt = ChatPromptTemplate.from_messages([
@@ -1539,24 +1566,64 @@ Please generate a natural question to ask the user for the missing information."
             
             # Try to extract structured data from the response
             structured_data = None
+            pagination_data = None
+            
             try:
-                # Look for JSON in the response
+                # Look for JSON in the response - handle both single objects and arrays
                 import json
                 import re
-                json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-                if json_match:
-                    structured_data = json.loads(json_match.group())
-            except:
-                pass
+                
+                # Look for product data patterns in the response
+                json_matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
+                
+                for json_str in json_matches:
+                    try:
+                        parsed_json = json.loads(json_str)
+                        
+                        # Check if this contains product data
+                        if 'products' in parsed_json or 'product' in parsed_json:
+                            structured_data = parsed_json
+                            
+                            # Extract pagination info if present
+                            if 'pagination' in parsed_json:
+                                pagination_data = parsed_json['pagination']
+                            break
+                            
+                        # Check if this is a single product
+                        elif '_id' in parsed_json and 'name' in parsed_json:
+                            structured_data = {'product': parsed_json}
+                            break
+                            
+                    except json.JSONDecodeError:
+                        continue
+                        
+            except Exception as e:
+                logger.debug(f"No structured data found in response: {e}")
 
-            logger.info("✅ Chat request processed successfully")
-            
-            return {
+            # Enhance response for product queries
+            response_data = {
                 "response": response_text,
                 "success": True,
                 "data": structured_data,
+                "pagination": pagination_data,
                 "intermediate_steps": result.get('intermediate_steps', [])
             }
+
+            # Add metadata for frontend consumption
+            if structured_data:
+                if 'products' in structured_data:
+                    response_data['type'] = 'product_list'
+                    response_data['count'] = len(structured_data['products'])
+                elif 'product' in structured_data:
+                    response_data['type'] = 'product_detail'
+                    response_data['count'] = 1
+                else:
+                    response_data['type'] = 'structured_data'
+            else:
+                response_data['type'] = 'text_only'
+
+            logger.info("✅ Chat request processed successfully")
+            return response_data
 
         except Exception as e:
             logger.error(f"❌ Chat processing failed: {e}")
