@@ -1882,38 +1882,52 @@ Remember: Apply these principles to ALL actions, not just specific ones. Use the
                 import json
                 import re
                 
-                # Look for JSON objects in the response
-                json_matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
-                
-                for json_str in json_matches:
+                # 1) Prefer fenced code blocks ```json ... ``` or ``` ... ```
+                fenced_match = re.search(r"```(?:json)?\n([\s\S]*?)\n```", response_text, re.IGNORECASE)
+                if fenced_match:
+                    fenced_content = fenced_match.group(1).strip()
                     try:
-                        parsed_json = json.loads(json_str)
-                        
-                        # Prefer the unified schema: items + pagination
-                        if 'items' in parsed_json and 'pagination' in parsed_json:
-                            structured_data = parsed_json
-                            pagination_data = parsed_json.get('pagination')
-                            break
-                        # Back-compat: products list shape
-                        if 'products' in parsed_json:
-                            items = parsed_json.get('products', [])
-                            pg = parsed_json.get('pagination') or {
-                                'page': parsed_json.get('page', 1),
-                                'limit': parsed_json.get('limit', 10),
-                                'total': parsed_json.get('total', len(items)),
-                                'totalPages': parsed_json.get('total_pages') or parsed_json.get('totalPages'),
-                                'hasMore': parsed_json.get('has_more', False)
-                            }
-                            structured_data = {'items': items, 'pagination': pg}
-                            pagination_data = pg
-                            break
-                        # Single item detail
-                        if '_id' in parsed_json and isinstance(parsed_json, dict):
-                            structured_data = parsed_json
-                            break
+                        parsed_fenced = json.loads(fenced_content)
+                        structured_data = parsed_fenced
+                        # Remove the fenced block from the human-friendly text
+                        response_text = (response_text[:fenced_match.start()] + response_text[fenced_match.end():]).strip()
+                    except Exception:
+                        # If fenced block isn't valid JSON, keep going and try object regex
+                        pass
+                
+                # Look for JSON objects in the response
+                if structured_data is None:
+                    json_matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
+                
+                    for json_str in json_matches:
+                        try:
+                            parsed_json = json.loads(json_str)
                             
-                    except json.JSONDecodeError:
-                        continue
+                            # Prefer the unified schema: items + pagination
+                            if 'items' in parsed_json and 'pagination' in parsed_json:
+                                structured_data = parsed_json
+                                pagination_data = parsed_json.get('pagination')
+                                break
+                            # Back-compat: products list shape
+                            if 'products' in parsed_json:
+                                items = parsed_json.get('products', [])
+                                pg = parsed_json.get('pagination') or {
+                                    'page': parsed_json.get('page', 1),
+                                    'limit': parsed_json.get('limit', 10),
+                                    'total': parsed_json.get('total', len(items)),
+                                    'totalPages': parsed_json.get('total_pages') or parsed_json.get('totalPages'),
+                                    'hasMore': parsed_json.get('has_more', False)
+                                }
+                                structured_data = {'items': items, 'pagination': pg}
+                                pagination_data = pg
+                                break
+                            # Single item detail
+                            if '_id' in parsed_json and isinstance(parsed_json, dict):
+                                structured_data = parsed_json
+                                break
+                            
+                        except json.JSONDecodeError:
+                            continue
                         
             except Exception as e:
                 logger.debug(f"No structured data found in response: {e}")
@@ -1926,6 +1940,8 @@ Remember: Apply these principles to ALL actions, not just specific ones. Use the
                 "pagination": pagination_data,
                 "intermediate_steps": result.get('intermediate_steps', [])
             }
+            # Provide a content alias for frontend convenience
+            response_data["content"] = response_text
 
             # Add metadata for frontend consumption
             if structured_data:
