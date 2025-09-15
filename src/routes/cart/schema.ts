@@ -8,7 +8,7 @@ export default {
   }),
 
   addToCart: Joi.object().keys({
-    userId: JoiObjectId(),
+    userId: Joi.string().optional(),
     browserId: Joi.string(),
     item: Joi.object().keys({
       product: JoiObjectId().required(),
@@ -32,6 +32,12 @@ export default {
     itemId: JoiObjectId().required(),
   }),
 
+  removeByProduct: Joi.object().keys({
+    userId: Joi.string().optional(),
+    browserId: Joi.string(),
+    productId: JoiObjectId().required(),
+  }),
+
   editItem: Joi.object().keys({
     userId: JoiObjectId(),
     browserId: Joi.string(),
@@ -39,5 +45,9 @@ export default {
     item: Joi.object().keys({
       supplements: Joi.array().items(JoiObjectId()),
     }),
+  }),
+  clearCart: Joi.object().keys({
+    userId: Joi.string().optional(),
+    browserId: Joi.string(),
   }),
 };

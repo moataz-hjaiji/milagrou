@@ -21,7 +21,7 @@ export interface ICartItem {
 }
 
 export default interface ICart extends Document {
-  userId: IUser | ObjectId;
+  userId: IUser | String;
   browserId: string;
   items: ICartItem[];
   deletedAt?: Date;
@@ -33,7 +33,7 @@ const schema = new Schema<ICart>(
       type: Schema.Types.String,
     },
     userId: {
-      type: Schema.Types.ObjectId,
+      type: Schema.Types.String,
       ref: () => USER_DOCUMENT_NAME,
     },
     items: [

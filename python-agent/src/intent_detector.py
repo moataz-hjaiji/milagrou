@@ -118,7 +118,6 @@ class IntentDetector:
             logger.info(f"🤖 Detecting intent for input: {user_input}")
             logger.debug(f"Using prompt messages: {messages}")
             response = self.llm.invoke(messages)
-            response = self.llm.invoke(messages)
             llm_output = response.content.strip()
             logger.debug(f"LLM raw response: {llm_output}")
 

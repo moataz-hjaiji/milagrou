@@ -26,6 +26,13 @@ router.delete(
   cartController.removeFromCart
 );
 
+router.delete(
+  '/remove-by-product',
+  // authentication,
+  validator(schema.removeByProduct),
+  cartController.removeByProduct
+);
+
 router.put(
   '/quantity',
   // authentication,
@@ -39,5 +46,10 @@ router.put(
   validator(schema.editItem),
   cartController.editItem
 );
-
+router.delete(
+  '/clear',
+  // authentication,
+  validator(schema.clearCart),
+  cartController.clearCart
+);
 export default router;

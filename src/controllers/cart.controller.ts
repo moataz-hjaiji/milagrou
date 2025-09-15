@@ -46,6 +46,17 @@ export const removeFromCart = asyncHandler(
   }
 );
 
+export const removeByProduct = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { productId, userId, browserId } = req.body;
+    const result = await cartService.removeByProduct({
+      userId,
+      productId,
+    });
+    new SuccessResponse('success', result).send(res);
+  }
+);
+
 export const editItem = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
     const { itemId, item, userId, browserId } = req.body;
@@ -55,6 +66,14 @@ export const editItem = asyncHandler(
       itemId,
       item,
     });
+    new SuccessResponse('success', result).send(res);
+  }
+);
+
+export const clearCart = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { userId, browserId } = req.body;
+    const result = await cartService.clearCart({ userId, browserId });
     new SuccessResponse('success', result).send(res);
   }
 );

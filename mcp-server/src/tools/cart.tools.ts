@@ -41,9 +41,10 @@ export class CartTools {
           type: 'object',
           properties: {
             userId: { type: 'string', description: 'User ID' },
+            browserId: { type: 'string', description: 'Browser ID' },
             productId: { type: 'string', description: 'Product ID to remove' }
           },
-          required: ['userId', 'productId']
+          required: ['productId']
         }
       },
       {
@@ -65,9 +66,10 @@ export class CartTools {
         inputSchema: {
           type: 'object',
           properties: {
-            userId: { type: 'string', description: 'User ID' }
+            userId: { type: 'string', description: 'User ID' },
+            browserId: { type: 'string', description: 'Browser ID' }
           },
-          required: ['userId']
+          required: []
         }
       }
     ];
@@ -82,7 +84,7 @@ export class CartTools {
         return await this.addToCart(args.userId, args.productId, args.quantity || 1);
       
       case 'remove_from_cart':
-        return await this.removeFromCart(args.userId, args.productId);
+        return await this.removeFromCart(args.userId, args.browserId, args.productId);
       
       case 'update_cart_item':
         return await this.updateCartItem(args.userId, args.productId, args.quantity);
@@ -98,7 +100,8 @@ export class CartTools {
   private async getCart(userId: string) {
     try {
       const response = await this.apiClient.post('/carts/me', {
-        browserId: 'mcp-client' 
+        userId,
+        browserId: 'mcp-client'
       });
       return {
         success: true,
@@ -115,6 +118,7 @@ export class CartTools {
   private async addToCart(userId: string, productId: string, quantity: number) {
     try {
       const response = await this.apiClient.post('/carts/add', {
+        userId,
         browserId: 'mcp-client',
         item: {
           product: productId, 
@@ -133,11 +137,13 @@ export class CartTools {
     }
   }
 
-  private async removeFromCart(userId: string, productId: string) {
+  private async removeFromCart(userId: string, browserId: string, productId: string) {
     try {
-      const response = await this.apiClient.delete('/carts/remove', {
-        browserId: 'mcp-client',
-        itemId: productId
+      // Use remove-by-product endpoint that removes by productId
+      const response = await this.apiClient.delete('/carts/remove-by-product', {
+        userId,
+        browserId: browserId || 'mcp-client',
+        productId
       });
       return {
         success: true,
@@ -154,6 +160,7 @@ export class CartTools {
   private async updateCartItem(userId: string, productId: string, quantity: number) {
     try {
       const response = await this.apiClient.put('/carts/quantity', {
+        userId,
         browserId: 'mcp-client',
         itemId: productId,
         action: quantity > 0 ? 'increment' : 'decrement'
@@ -172,12 +179,13 @@ export class CartTools {
 
   private async clearCart(userId: string) {
     try {
-      // For clearing cart, we'll need to implement a different approach
-      // since the API doesn't have a direct clear endpoint
-      // We could get all items and remove them one by one, or implement a clear endpoint
+      const response = await this.apiClient.delete('/carts/clear', {
+        userId,
+        browserId: 'mcp-client'
+      });
       return {
-        success: false,
-        error: 'Clear cart functionality not implemented in API'
+        success: true,
+        data: response.data
       };
     } catch (error: any) {
       return {

@@ -102,6 +102,12 @@ class UpdateCartItemInput(BaseModel):
     productId: str
     quantity: int
 
+class ClearCartInput(BaseModel):
+    pass
+
+class ClearCartInput(BaseModel):
+    pass
+
 class EcommerceTool(BaseTool):
     """LangChain tool wrapper for MCP tools"""
     
@@ -405,7 +411,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
                     import jwt
                     # Decode the JWT token to get user information
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("email", "your@email.com")
+                    actual_user_id = decoded_token.get("user_id", "your@email.com")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}, using default user ID")
             else:
@@ -478,7 +484,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
                 try:
                     import jwt
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("email", "your@email.com")
+                    actual_user_id = decoded_token.get("user_id", "your@email.com")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}, using default user ID")
             else:
@@ -551,7 +557,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
                     import jwt
                     # Decode the JWT token to get user information
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("email", "your@email.com")
+                    actual_user_id = decoded_token.get("user_id", "your@email.com")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}, using default user ID")
             else:
@@ -623,7 +629,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
                 try:
                     import jwt
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("email", "your@email.com")
+                    actual_user_id = decoded_token.get("user_id", "your@email.com")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}, using default user ID")
             else:
@@ -685,6 +691,79 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
             )
             return json.dumps(error_response.dict(), indent=2)
     
+    def clear_cart() -> str:
+        """Clear all items from the user's shopping cart"""
+        try:
+            # Extract user email from JWT token
+            actual_user_id = "your@email.com"  # Default fallback
+            if mcp_client.user_token:
+                try:
+                    import jwt
+                    decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
+                    print(decoded_token)
+                    actual_user_id = decoded_token.get("user_id", actual_user_id)
+                except Exception as e:
+                    logger.warning(f"Could not decode JWT token: {e}, using default user ID")
+            else:
+                logger.warning("No user token available, using default user ID")
+
+            # Make direct HTTP request to MCP server
+            url = f"{mcp_client.base_url}/execute"
+            payload = {
+                "toolName": "clear_cart",
+                "args": {"userId": actual_user_id}
+            }
+            headers = {"Content-Type": "application/json"}
+            if mcp_client.user_token:
+                headers["Authorization"] = f"Bearer {mcp_client.user_token}"
+
+            result = make_sync_http_request(url, "POST", payload, headers)
+
+            if "error" in result:
+                return json.dumps({
+                    "response_type": "error",
+                    "success": False,
+                    "message": f"HTTP request failed: {result['error']}",
+                    "data": None,
+                    "error": result['error']
+                }, indent=2)
+
+            # Parse MCP response
+            mcp_result = result.get("result", {})
+            if mcp_result and "statusCode" in mcp_result:
+                success = mcp_result.get("statusCode") == 200
+                response = MCPResponse(
+                    success=success,
+                    data=mcp_result,
+                    error=None if success else mcp_result.get("message", "Unknown error")
+                )
+            else:
+                response = MCPResponse(
+                    success=True,
+                    data=mcp_result,
+                    error=None
+                )
+
+            if response.success:
+                return json.dumps(response.data, indent=2)
+            else:
+                error_response = create_response(
+                    ResponseType.ERROR,
+                    success=False,
+                    message=f"Tool execution failed: {response.error}",
+                    error=response.error
+                )
+                return json.dumps(error_response.dict(), indent=2)
+        except Exception as e:
+            logger.error(f"Error running clear_cart: {e}")
+            error_response = create_response(
+                ResponseType.ERROR,
+                success=False,
+                message=f"Tool execution error: {str(e)}",
+                error=str(e)
+            )
+            return json.dumps(error_response.dict(), indent=2)
+
     # Create StructuredTools
     tools = [
         StructuredTool.from_function(
@@ -728,6 +807,12 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
             name="update_cart_item",
             description="Update quantity of item in cart",
             args_schema=UpdateCartItemInput
+        ),
+        StructuredTool.from_function(
+            func=clear_cart,
+            name="clear_cart",
+            description="Clear user shopping cart",
+            args_schema=ClearCartInput
         )
     ]
     
@@ -764,6 +849,29 @@ class EcommerceAgent:
         self.response_formatter = ResponseFormatter()
         
         logger.info("✅ EcommerceAgent initialization completed")
+        
+        # Customer-facing operation specifications
+        self.customer_operation_specs: Dict[str, List[str]] = {
+            # Products & Shopping
+            "browse_products": ["category"],  # filters optional
+            "search_product": ["keywords"],
+            "view_product_details": ["product_id"],
+            "add_to_cart": ["product_id", "quantity"],
+            "clear_cart": ["customer_id"],
+            "view_cart": ["customer_id"],
+            "remove_from_cart": ["product_id"],
+            # Orders
+            "place_order": ["customer_id", "cart_items", "shipping_address", "payment_method"],
+            "track_order": ["order_id"],
+            "cancel_order": ["order_id"],
+            "view_orders": ["customer_id"],
+            # Payments
+            "checkout": ["order_id", "payment_method"],
+            "refund_request": ["order_id", "reason"],
+            # Delivery & Returns
+            "delivery_status": ["order_id"],
+            "return_order": ["order_id", "reason"],
+        }
         
     def set_user_token(self, token: str):
         """Set the user token for authentication"""
@@ -995,6 +1103,170 @@ Please generate a natural question to ask the user for the missing information."
             logger.error(f"❌ Failed to initialize agent: {e}")
             raise
 
+    async def inject_customer_action_prompt(self, user_input: str, customer_obj: Optional[Dict[str, Any]] = None) -> str:
+        """Detect customer intent, gather info from profile/cart context, and return ONLY the injected prompt string."""
+        customer_obj = customer_obj or {}
+        operation = self._detect_customer_operation(user_input)
+        if not operation:
+            return "What would you like to do: browse, search, buy, pay, track, or return?"
+        required = self.customer_operation_specs.get(operation, [])
+        params_from_text = self._extract_customer_params_from_text(operation, user_input)
+        params = self._fill_from_customer_object(params_from_text, customer_obj)
+        missing = [f for f in required if f not in params or params.get(f) in (None, "", [], {})]
+        if missing:
+            return self._compose_missing_question(missing)
+        return self._build_customer_action_prompt(operation, params)
+
+    def _detect_customer_operation(self, user_input: str) -> Optional[str]:
+        """Lightweight keyword-based detection for customer operations."""
+        text = user_input.lower()
+        # Products & Shopping
+        if any(k in text for k in ["browse", "show ", "all products", "categories"]):
+            return "browse_products"
+        if any(k in text for k in ["search", "find", "looking for"]):
+            return "search_product"
+        if any(k in text for k in ["details", "view product", "show details", "specs"]):
+            return "view_product_details"
+        if any(k in text for k in ["add to cart", "buy", "purchase", "i want to buy", "add "]):
+            return "add_to_cart"
+        if any(k in text for k in ["clear cart", "empty cart", "remove all", "reset cart"]):
+            return "clear_cart"
+        if any(k in text for k in ["view cart", "my cart", "cart"]):
+            return "view_cart"
+        if any(k in text for k in ["remove from cart", "remove ", "delete from cart"]):
+            return "remove_from_cart"
+        # Orders
+        if any(k in text for k in ["place order", "checkout my cart", "complete purchase", "buy now"]):
+            return "place_order"
+        if any(k in text for k in ["track order", "where is my order", "delivery status", "track "]):
+            return "track_order"
+        if "cancel" in text and "order" in text:
+            return "cancel_order"
+        if any(k in text for k in ["my orders", "view orders", "order history"]):
+            return "view_orders"
+        # Payments
+        if any(k in text for k in ["checkout", "pay", "payment"]):
+            return "checkout"
+        if any(k in text for k in ["refund", "money back", "return my money"]):
+            return "refund_request"
+        # Delivery & Returns
+        if any(k in text for k in ["delivery status", "where is my", "status of order"]):
+            return "delivery_status"
+        if any(k in text for k in ["return order", "return it", "send back"]):
+            return "return_order"
+        return None
+
+    def _extract_customer_params_from_text(self, operation: str, user_input: str) -> Dict[str, Any]:
+        """Heuristic extraction from free text for common fields."""
+        import re, json as _json
+        text = user_input
+        out: Dict[str, Any] = {}
+        # Product and order identifiers
+        pid = re.search(r"product\s*(?:id)?\s*[:#]?\s*([\w-]+)", text, re.I)
+        if pid:
+            out["product_id"] = pid.group(1)
+        oid = re.search(r"order\s*(?:id)?\s*[:#]?\s*([\w-]+)", text, re.I)
+        if oid:
+            out["order_id"] = oid.group(1)
+        qty = re.search(r"(?:qty|quantity)\s*[:=]?\s*(\d+)", text, re.I)
+        if qty:
+            out["quantity"] = int(qty.group(1))
+        # Keywords for search
+        if operation == "search_product":
+            # capture quotes or trailing words after 'search'
+            m = re.search(r"search(?: for)?\s+([^\n]+)", text, re.I)
+            if m:
+                out["keywords"] = m.group(1).strip().strip(".!")
+            quotes = re.findall(r"'([^']+)'|\"([^\"]+)\"", text)
+            if quotes and "keywords" not in out:
+                out["keywords"] = (quotes[0][0] or quotes[0][1])
+        # Category for browsing
+        if operation == "browse_products":
+            m = re.search(r"(?:in|category|categories?)\s+([A-Za-z &/-]+)", text, re.I)
+            if m:
+                out["category"] = m.group(1).strip()
+        # Reasons
+        if any(k in operation for k in ["refund_request", "return_order"]):
+            m = re.search(r"because\s+(.+)$", text, re.I)
+            if m:
+                out["reason"] = m.group(1).strip()
+        return out
+
+    def _fill_from_customer_object(self, params: Dict[str, Any], customer_obj: Dict[str, Any]) -> Dict[str, Any]:
+        """Fill missing fields from customer profile/cart context."""
+        filled = dict(params)
+        def pick(keys: List[str]):
+            for k in keys:
+                if k in customer_obj and customer_obj[k]:
+                    return customer_obj[k]
+            return None
+        if "customer_id" not in filled:
+            cid = pick(["customer_id", "id", "user_id"])
+            if cid is not None:
+                filled["customer_id"] = cid
+        if "shipping_address" not in filled:
+            addr = pick(["shipping_address", "default_address", "address"])
+            if addr is not None:
+                filled["shipping_address"] = addr
+        if "payment_method" not in filled:
+            pm = pick(["payment_method", "default_payment", "card"])
+            if pm is not None:
+                filled["payment_method"] = pm
+        if "cart_items" not in filled and "cart" in customer_obj and customer_obj.get("cart"):
+            filled["cart_items"] = customer_obj["cart"]
+        if "order_id" not in filled and customer_obj.get("last_order_id"):
+            filled["order_id"] = customer_obj["last_order_id"]
+        return filled
+
+    def _compose_missing_question(self, missing_fields: List[str]) -> str:
+        readable = [f.replace("_", " ") for f in missing_fields]
+        if len(readable) == 1:
+            return f"Could you share your {readable[0]} to proceed?"
+        if len(readable) == 2:
+            return f"Could you share your {readable[0]} and {readable[1]} to proceed?"
+        return f"To help you faster, could you share: {', '.join(readable[:-1])}, and {readable[-1]}?"
+
+    def _build_customer_action_prompt(self, operation: str, p: Dict[str, Any]) -> str:
+        """Build the exact final prompt strings for customer operations."""
+        if operation == "browse_products":
+            filters = p.get("filters", {})
+            return (
+                f"Show me all {p.get('category','')} with filters: {json.dumps(filters)}" if filters else
+                f"Show me all {p.get('category','')}"
+            )
+        if operation == "search_product":
+            return f"Search products matching: {p.get('keywords','')}"
+        if operation == "view_product_details":
+            return f"Show details for product {p.get('product_id','')}"
+        if operation == "add_to_cart":
+            return f"Add {p.get('quantity',1)} of product {p.get('product_id','')} to the customer’s cart"
+        if operation == "clear_cart":
+            return f"Clear the cart for customer {p.get('customer_id','')}"
+        if operation == "view_cart":
+            return f"Show current cart for customer {p.get('customer_id','')}"
+        if operation == "remove_from_cart":
+            return f"Remove product {p.get('product_id','')} from the cart"
+        if operation == "place_order":
+            return (
+                f"Place a new order for customer {p.get('customer_id','')} with items: {json.dumps(p.get('cart_items', []))}, "
+                f"shipping to {p.get('shipping_address','')}, paid via {p.get('payment_method','')}"
+            )
+        if operation == "track_order":
+            return f"Track order {p.get('order_id','')}"
+        if operation == "cancel_order":
+            return f"Cancel order {p.get('order_id','')}"
+        if operation == "view_orders":
+            return f"Show all orders for customer {p.get('customer_id','')}"
+        if operation == "checkout":
+            return f"Process checkout for order {p.get('order_id','')} using {p.get('payment_method','')}"
+        if operation == "refund_request":
+            return f"Request refund for order {p.get('order_id','')} because {p.get('reason','')}"
+        if operation == "delivery_status":
+            return f"Get delivery status for order {p.get('order_id','')}"
+        if operation == "return_order":
+            return f"Request return for order {p.get('order_id','')} because {p.get('reason','')}"
+        return ""
+
     async def handle_user_request(self, user_input: str, user_token: Optional[str] = None, user_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Enhanced method using LLM to analyze requests with conversation context, handle pagination, and return structured data
@@ -1053,8 +1325,8 @@ Please generate a natural question to ask the user for the missing information."
             # Step 2: Advanced LLM analysis with error handling
             logger.info("🤖 Step 2: Using LLM to analyze request and determine requirements")
             try:
-                llm_analysis = await self._analyze_request_with_llm(user_input, conversation_context)
-                logger.info(f"✅ LLM Analysis completed: Intent={llm_analysis.get('intent')}, Confidence={llm_analysis.get('confidence')}")
+                llm_analysis  = self.intent_detector.detect_intent(user_input)
+                logger.info(f"✅ Intent detected: {llm_analysis}")
             except Exception as e:
                 logger.error(f"❌ LLM analysis failed: {e}")
                 response_data.update({
@@ -1065,10 +1337,11 @@ Please generate a natural question to ask the user for the missing information."
             
             # Step 3: Authentication validation with detailed logging
             logger.info("🔐 Step 3: Checking authentication requirements")
-            requires_auth = llm_analysis.get('requires_auth', False)
+            requires_auth = bool(getattr(llm_analysis, 'requires_auth', False))
             
             if requires_auth and not user_token:
-                logger.warning(f"❌ Authentication required for '{llm_analysis.get('intent')}' but no token provided")
+                intent_name = getattr(llm_analysis, 'tool_name', 'unknown')
+                logger.warning(f"❌ Authentication required for '{intent_name}' but no token provided")
                 response_data.update({
                     "response": "You need to be logged in to perform this action. Please login first with your email and password.",
                     "error": "Authentication required",
@@ -1082,7 +1355,8 @@ Please generate a natural question to ask the user for the missing information."
             
             # Step 4: Handle missing information with user interaction
             logger.info("📋 Step 4: Checking for missing information and parameters")
-            missing_info = llm_analysis.get('missing_info', [])
+            # IntentResult has no extracted values; default to no missing params here
+            missing_info: List[str] = []
             
             if missing_info:
                 logger.info(f"❌ Missing information detected: {missing_info}")
@@ -1100,7 +1374,7 @@ Please generate a natural question to ask the user for the missing information."
                         user_input, 
                         missing_info,
                         conversation_context,
-                        llm_analysis.get('intent', 'unknown')
+                        getattr(llm_analysis, 'tool_name', 'unknown')
                     )
                     
                     # Save assistant question
@@ -1116,7 +1390,7 @@ Please generate a natural question to ask the user for the missing information."
                         "requires_input": True,
                         "data": {
                             "missing_parameters": missing_info,
-                            "intent": llm_analysis.get('intent'),
+                            "intent": getattr(llm_analysis, 'tool_name', None),
                             "context": "clarification_needed"
                         }
                     })
@@ -1136,7 +1410,7 @@ Please generate a natural question to ask the user for the missing information."
             
             try:
                 # Determine if this is a data retrieval request that needs pagination
-                intent = llm_analysis.get('intent', 'unknown')
+                intent = getattr(llm_analysis, 'tool_name', 'unknown')
                 is_data_request = intent in ['get_products', 'search_products', 'get_orders', 'get_cart']
                 
                 if is_data_request:
@@ -1146,7 +1420,7 @@ Please generate a natural question to ask the user for the missing information."
                         conversation_messages, 
                         user_token, 
                         user_id,
-                        llm_analysis
+                        {"intent": intent}
                     )
                 else:
                     logger.info(f"⚡ Executing action request: {intent}")
@@ -1155,7 +1429,7 @@ Please generate a natural question to ask the user for the missing information."
                         conversation_messages, 
                         user_token, 
                         user_id,
-                        llm_analysis
+                        {"intent": intent}
                     )
                 
                 # Process and structure the result
@@ -1207,7 +1481,7 @@ Please generate a natural question to ask the user for the missing information."
                                   user_token: str, user_id: str, llm_analysis: Dict) -> Dict[str, Any]:
         """Execute data retrieval requests with pagination support"""
         try:
-            intent = llm_analysis.get('intent', 'unknown')
+            intent = llm_analysis.get('intent', 'unknown') if isinstance(llm_analysis, dict) else getattr(llm_analysis, 'tool_name', 'unknown')
             logger.info(f"📊 Executing data request: {intent}")
             
             # Check if agent is properly initialized
@@ -1272,7 +1546,7 @@ Please generate a natural question to ask the user for the missing information."
                                     user_token: str, user_id: str, llm_analysis: Dict) -> Dict[str, Any]:
         """Execute action requests (non-data retrieval)"""
         try:
-            intent = llm_analysis.get('intent', 'unknown')
+            intent = llm_analysis.get('intent', 'unknown') if isinstance(llm_analysis, dict) else getattr(llm_analysis, 'tool_name', 'unknown')
             logger.info(f"⚡ Executing action request: {intent}")
             
             # Check if agent is properly initialized
@@ -1450,41 +1724,76 @@ Please generate a natural question to ask the user for the missing information."
             logger.info("🔧 Creating LangChain agent with tools")
             
             # Create the system prompt for the agent
-            system_prompt = """You are a helpful e-commerce assistant that can help users:
-            
-            1. Browse and search products
-            2. Get detailed product information
-            3. Manage shopping cart (add, remove, update items)
-            4. View cart contents
-            5. Provide general assistance
-            
-            IMPORTANT PRODUCT RESPONSE REQUIREMENTS:
-            - When users ask for products, ALWAYS use the appropriate tools to search or get product information
-            - For product queries (browsing, searching, or listing products), your response MUST include:
-              1. A clear, user-friendly description of the products found
-              2. The complete product data in a structured format within your response
-              3. Pagination information (current page, total pages, items per page) when applicable
-              4. Clear indication of how many products were found and displayed
-            
-            - When displaying product lists, structure your response like this:
-              "I found X products for you. Here are the results (page Y of Z):
-              
-              [User-friendly product descriptions]
-              
-              Product Data:
-              {{\"products\": [...], \"pagination\": {{\"page\": 1, \"limit\": 10, \"total\": X, \"totalPages\": Y}}}}"
-            
-            - For single product details, include the complete product object in your response
-            - Always mention pagination details when showing product lists
-            - If no products are found, clearly state this and suggest alternatives
-            
-            CART AND AUTH REQUIREMENTS:
-            - When users want to manage their cart, use the cart-related tools
-            - If you need user authentication for cart operations, let them know they need to log in first
-            - Always be helpful, friendly, and provide clear information
-            
-            Use the available tools to fulfill user requests and provide accurate, up-to-date information.
-            Ensure that product-related responses always contain the actual product data for frontend consumption."""
+            system_prompt = """You are an AI assistant for an e-commerce platform. You can help users with various e-commerce operations.
+
+CORE PRINCIPLES FOR ALL ACTIONS:
+
+1. **Data Presentation**: For ALL read operations (getting, searching, viewing, listing data), always present the data in clean JSON format wrapped in ```json``` code blocks. The tools return structured JSON data - present this data clearly and concisely in the JSON format. Format your response as: "Here's the data you requested:" followed by the JSON block.
+
+2. **Parameter Handling**: For ALL actions that require parameters:
+   - If required parameters are missing, ask the user for them clearly and wait for their response    - Extract available information from the user's message first
+   - If you can infer missing parameters from context, do so intelligently
+   - Always validate that you have all required parameters before executing an action
+   - For product IDs: Look for patterns like "68c5fff6fb9060f2b15b6944" or "product 68c5fff6fb9060f2b15b6944"
+   - For product names: Extract the product name from phrases like "details of this product [name]" or "show me [product name]"
+   - For cart operations: Use the most recently discussed product ID from conversation history
+   - CRITICAL: When user says "give me the details of this product 68c5fff6fb9060f2b15b6944", you MUST extract the ID "68c5fff6fb9060f2b15b6944" and pass it as {{"id": "68c5fff6fb9060f2b15b6944"}} to the get_product tool
+
+3. **Error Handling**: For ALL tool executions:
+   - If a tool execution fails, provide a clear error message to the user
+   - Suggest alternative actions or ask for clarification
+   - Never leave the user without feedback
+
+4. **User Experience**: For ALL interactions:
+   - Be conversational and helpful
+   - Provide clear feedback on successful operations
+   - Ask for clarification when needed
+   - Guide users through multi-step processes
+
+5. **Authentication**: For ALL actions that require user context:
+   - Use the provided user token when available
+   - Handle authentication errors gracefully
+   - Guide users to authenticate when needed
+
+6. **CONTEXTUAL UNDERSTANDING** (CRITICAL):
+   - ALWAYS maintain conversation context and remember what the user is referring to
+   - When user uses pronouns like "it", "this", "that", "the first one" - understand what they're referring to from the conversation history
+   - When user says "give me more", "show me more", "next", "continue" - understand what they want more of based on the previous conversation
+   - For "give me more products" - look at the last product list in conversation history and increment the page number
+   - When user says "add it to cart" - use the most recently discussed product
+   - When user asks "how many?" - understand they're asking about quantity for the current action
+   - When user says "remove the first item" - understand they mean the first item in their cart
+   - Keep track of the last action performed and continue from there
+
+   - If context is unclear, ask specific clarifying questions rather than generic ones
+   - Use the conversation history to understand references and maintain context
+
+7. **PAGINATION HANDLING** (CRITICAL):
+   - When user asks for "more products", "next page", "show more", "continue" after a product list - automatically increment the page number
+   - Look at the conversation history to find the last product list response
+   - Extract the page number from the previous response (it should be in the data object)
+   - If the previous response showed page 1, use page 2. If page 2, use page 3, etc.
+   - Always use the same limit (number of products per page) as the previous request
+   - If no previous pagination context exists, start with page 1
+   - When showing paginated results, always include the current page number in your response
+   - If you reach the last page, inform the user that there are no more products
+   - Example: If previous response had {{"page": 1, "limit": 10}}, then next request should use {{"page": 2, "limit": 10}}
+
+AVAILABLE TOOL CATEGORIES:
+- Authentication: User login, registration, logout, token refresh
+- Products: Browse, search, view products and categories
+- Cart: Manage shopping cart items
+- Orders: Create, view, track, and manage orders
+- User: Profile and address management
+
+EXAMPLES OF PARAMETER EXTRACTION:
+- User: "give me the details of this product 68c5fff6fb9060f2b15b6944" → Use get_product with {{"id": "68c5fff6fb9060f2b15b6944"}}
+- User: "show me more products" → Use get_products with {{"page": 2}} (if previous was page 1)
+- User: "add it to cart" → Use add_to_cart with the most recent product ID from conversation history
+- User: "search for laptops" → Use search_products with {{"query": "laptops"}}
+
+Remember: Apply these principles to ALL actions, not just specific ones. Use the available tools dynamically based on user intent, and always follow the core principles above. MOST IMPORTANTLY: Maintain conversation context and understand what the user is referring to."""
+
 
             # Create the prompt template
             prompt = ChatPromptTemplate.from_messages([
@@ -1573,25 +1882,34 @@ Please generate a natural question to ask the user for the missing information."
                 import json
                 import re
                 
-                # Look for product data patterns in the response
+                # Look for JSON objects in the response
                 json_matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
                 
                 for json_str in json_matches:
                     try:
                         parsed_json = json.loads(json_str)
                         
-                        # Check if this contains product data
-                        if 'products' in parsed_json or 'product' in parsed_json:
+                        # Prefer the unified schema: items + pagination
+                        if 'items' in parsed_json and 'pagination' in parsed_json:
                             structured_data = parsed_json
-                            
-                            # Extract pagination info if present
-                            if 'pagination' in parsed_json:
-                                pagination_data = parsed_json['pagination']
+                            pagination_data = parsed_json.get('pagination')
                             break
-                            
-                        # Check if this is a single product
-                        elif '_id' in parsed_json and 'name' in parsed_json:
-                            structured_data = {'product': parsed_json}
+                        # Back-compat: products list shape
+                        if 'products' in parsed_json:
+                            items = parsed_json.get('products', [])
+                            pg = parsed_json.get('pagination') or {
+                                'page': parsed_json.get('page', 1),
+                                'limit': parsed_json.get('limit', 10),
+                                'total': parsed_json.get('total', len(items)),
+                                'totalPages': parsed_json.get('total_pages') or parsed_json.get('totalPages'),
+                                'hasMore': parsed_json.get('has_more', False)
+                            }
+                            structured_data = {'items': items, 'pagination': pg}
+                            pagination_data = pg
+                            break
+                        # Single item detail
+                        if '_id' in parsed_json and isinstance(parsed_json, dict):
+                            structured_data = parsed_json
                             break
                             
                     except json.JSONDecodeError:
@@ -1623,6 +1941,7 @@ Please generate a natural question to ask the user for the missing information."
                 response_data['type'] = 'text_only'
 
             logger.info("✅ Chat request processed successfully")
+            logger.info(f"Response data: {response_data}")
             return response_data
 
         except Exception as e:

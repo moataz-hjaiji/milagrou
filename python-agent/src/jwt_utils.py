@@ -53,6 +53,8 @@ def extract_user_id_from_token(token: str) -> Optional[str]:
         return None
     
     # Try different possible field names for user ID
+    print(payload)
+    logger.debug(f"Extracted user ID: {payload}")
     user_id = (
         payload.get('user_id') or 
         payload.get('userId') or 

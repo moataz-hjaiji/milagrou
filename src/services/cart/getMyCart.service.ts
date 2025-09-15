@@ -3,7 +3,7 @@ import CartRepo from '../../database/repository/CartRepo';
 import { calculateItemPrices } from './calculateCartPrices';
 
 interface getMyCartParams {
-  userId: ObjectId;
+  userId: string;
   browserId: string;
 }
 

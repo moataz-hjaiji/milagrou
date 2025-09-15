@@ -3,7 +3,7 @@ import { ICartItem } from '../../database/model/Cart';
 import CartRepo from '../../database/repository/CartRepo';
 
 interface addToCartParams {
-  userId: ObjectId;
+  userId: string;
   browserId: string;
   item: ICartItem;
 }
