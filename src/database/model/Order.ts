@@ -39,7 +39,7 @@ export default interface IOrder extends Document {
   paymentStatus: PaymentStatus;
   orderType: OrderType;
   status: OrderStatus;
-  addressId?: IAddress | ObjectId;
+  addressId?: IAddress | String;
   promoCodeId?: IPromoCode | ObjectId;
   items: any;
   orderPrice: number;
@@ -78,7 +78,7 @@ const schema = new Schema<IOrder>(
       default: PaymentStatus.UNPAID,
     },
     addressId: {
-      type: Schema.Types.ObjectId,
+      type: Schema.Types.String,
       ref: () => ADDRESS_DOCUMENT_NAME,
     },
     promoCodeId: {

@@ -15,7 +15,7 @@ import { sendNotifUser } from '../../helpers/notif';
 
 interface checkoutParams {
   userId: ObjectId;
-  browserId: string;
+  browserId?: string;
   deliveryType: string;
   orderType: string;
   reservationDate?: Date;

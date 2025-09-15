@@ -34,6 +34,7 @@ from missing import MissingParameterHandler
 
 from response_types import ResponseType, create_response, BaseResponse
 from response_mapper import ResponseMapper
+from prompt_registry import PromptRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -102,11 +103,38 @@ class UpdateCartItemInput(BaseModel):
     productId: str
     quantity: int
 
-class ClearCartInput(BaseModel):
-    pass
+# New: Order-related input models
+class GetOrdersInput(BaseModel):
+    page: Optional[int] = None
+    limit: Optional[int] = None
+    status: Optional[str] = None
 
-class ClearCartInput(BaseModel):
-    pass
+class GetOrderInput(BaseModel):
+    id: str
+
+class CreateOrderInput(BaseModel):
+    # Required
+    orderType: str  # Allowed: GIFT | RESERVATION | NORMAL
+    InvoicePaymentMethods: List[int]
+    deliveryType: str  # Allowed: DELIVERY | PICKUP
+    # Optional/conditional
+    userId: Optional[str] = None
+    addressId: Optional[str] = None
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    phoneNumber: Optional[str] = None
+    email: Optional[str] = None
+    note: Optional[str] = None
+    giftMsg: Optional[str] = None
+    code: Optional[str] = None
+    reservationDate: Optional[str] = None  # ISO string
+    browserId: Optional[str] = None
+
+class CancelOrderInput(BaseModel):
+    id: str
+
+class TrackOrderInput(BaseModel):
+    id: str
 
 class EcommerceTool(BaseTool):
     """LangChain tool wrapper for MCP tools"""
@@ -187,7 +215,7 @@ class EcommerceTool(BaseTool):
             
             if response.success:
                 # For read actions, return structured JSON response
-                if self.name in ["get_products", "get_product", "search_products", "get_categories", "get_category", 
+                if self.name in ["get_products", "get_product", "search_products", "get_categories", 
                                "get_cart", "get_orders", "get_order", "get_profile", "get_addresses"]:
                     structured_response = ResponseMapper.map_tool_response(self.name, response.data)
                     return json.dumps(structured_response.dict(), indent=2)
@@ -214,7 +242,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
         """Get single product by ID"""
         try:
             # Make direct HTTP request to MCP server
-            url = f"{mcp_client.base_url}fexecute"
+            url = f"{mcp_client.base_url}/execute"
             payload = {
                 "toolName": "get_product",
                 "args": {"id": id}
@@ -411,7 +439,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
                     import jwt
                     # Decode the JWT token to get user information
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("user_id", "your@email.com")
+                    actual_user_id = decoded_token.get("email", "your@email.com")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}, using default user ID")
             else:
@@ -479,12 +507,12 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
         """Add item to shopping cart"""
         try:
             # Extract user email from JWT token
-            actual_user_id = "your@email.com"  # Default fallback
+            actual_user_id = "youremail.com"  # Default fallback
             if mcp_client.user_token:
                 try:
                     import jwt
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("user_id", "your@email.com")
+                    actual_user_id = decoded_token.get("email", "youremail.com")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}, using default user ID")
             else:
@@ -551,13 +579,13 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
         """Remove item from shopping cart"""
         try:
             # Extract user email from JWT token
-            actual_user_id = "your@email.com"  # Default fallback
+            actual_user_id = "youremail.com"  # Default fallback
             if mcp_client.user_token:
                 try:
                     import jwt
                     # Decode the JWT token to get user information
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("user_id", "your@email.com")
+                    actual_user_id = decoded_token.get("email", "youremail.com")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}, using default user ID")
             else:
@@ -624,12 +652,12 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
         """Update quantity of item in cart"""
         try:
             # Extract user email from JWT token
-            actual_user_id = "your@email.com"  # Default fallback
+            actual_user_id = "youremail.com"  # Default fallback
             if mcp_client.user_token:
                 try:
                     import jwt
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("user_id", "your@email.com")
+                    actual_user_id = decoded_token.get("email", "youremail.com")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}, using default user ID")
             else:
@@ -690,80 +718,180 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
                 error=str(e)
             )
             return json.dumps(error_response.dict(), indent=2)
-    
-    def clear_cart() -> str:
-        """Clear all items from the user's shopping cart"""
+
+    # New: Order tools implementations
+    def get_orders(page: Optional[int] = None, limit: Optional[int] = None, status: Optional[str] = None) -> str:
+        """Get user's orders (requires auth)."""
         try:
             # Extract user email from JWT token
-            actual_user_id = "your@email.com"  # Default fallback
+            actual_user_id = None
             if mcp_client.user_token:
                 try:
-                    import jwt
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    print(decoded_token)
-                    actual_user_id = decoded_token.get("user_id", actual_user_id)
+                    actual_user_id = decoded_token.get("email")
                 except Exception as e:
-                    logger.warning(f"Could not decode JWT token: {e}, using default user ID")
-            else:
-                logger.warning("No user token available, using default user ID")
-
-            # Make direct HTTP request to MCP server
+                    logger.warning(f"Could not decode JWT token: {e}")
+            
+            args: Dict[str, Any] = {}
+            if page is not None:
+                args["page"] = page
+            if limit is not None:
+                args["limit"] = limit
+            if status:
+                args["status"] = status
+            if actual_user_id:
+                args["userId"] = actual_user_id
+            
             url = f"{mcp_client.base_url}/execute"
-            payload = {
-                "toolName": "clear_cart",
-                "args": {"userId": actual_user_id}
-            }
+            payload = {"toolName": "get_orders", "args": args}
             headers = {"Content-Type": "application/json"}
             if mcp_client.user_token:
                 headers["Authorization"] = f"Bearer {mcp_client.user_token}"
-
+            
             result = make_sync_http_request(url, "POST", payload, headers)
-
             if "error" in result:
-                return json.dumps({
-                    "response_type": "error",
-                    "success": False,
-                    "message": f"HTTP request failed: {result['error']}",
-                    "data": None,
-                    "error": result['error']
-                }, indent=2)
-
-            # Parse MCP response
+                return json.dumps({"success": False, "message": f"HTTP request failed: {result['error']}", "error": result['error']}, indent=2)
+            
             mcp_result = result.get("result", {})
-            if mcp_result and "statusCode" in mcp_result:
-                success = mcp_result.get("statusCode") == 200
-                response = MCPResponse(
-                    success=success,
-                    data=mcp_result,
-                    error=None if success else mcp_result.get("message", "Unknown error")
-                )
-            else:
-                response = MCPResponse(
-                    success=True,
-                    data=mcp_result,
-                    error=None
-                )
-
-            if response.success:
-                return json.dumps(response.data, indent=2)
-            else:
-                error_response = create_response(
-                    ResponseType.ERROR,
-                    success=False,
-                    message=f"Tool execution failed: {response.error}",
-                    error=response.error
-                )
-                return json.dumps(error_response.dict(), indent=2)
+            success = mcp_result.get("statusCode") == 200 if "statusCode" in mcp_result else True
+            if success:
+                structured_response = ResponseMapper.map_tool_response("get_orders", mcp_result)
+                return json.dumps(structured_response.dict(), indent=2)
+            return json.dumps(mcp_result, indent=2)
         except Exception as e:
-            logger.error(f"Error running clear_cart: {e}")
-            error_response = create_response(
-                ResponseType.ERROR,
-                success=False,
-                message=f"Tool execution error: {str(e)}",
-                error=str(e)
-            )
-            return json.dumps(error_response.dict(), indent=2)
+            logger.error(f"Error running get_orders: {e}")
+            return json.dumps({"success": False, "error": str(e)}, indent=2)
 
+    def get_order(id: str) -> str:
+        """Get single order by ID (requires auth)."""
+        try:
+            args: Dict[str, Any] = {"id": id}
+            if mcp_client.user_token:
+                try:
+                    decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
+                    actual_user_id = decoded_token.get("email")
+                    if actual_user_id:
+                        args["userId"] = actual_user_id
+                except Exception as e:
+                    logger.warning(f"Could not decode JWT token: {e}")
+            
+            url = f"{mcp_client.base_url}/execute"
+            payload = {"toolName": "get_order", "args": args}
+            headers = {"Content-Type": "application/json"}
+            if mcp_client.user_token:
+                headers["Authorization"] = f"Bearer {mcp_client.user_token}"
+            result = make_sync_http_request(url, "POST", payload, headers)
+            if "error" in result:
+                return json.dumps({"success": False, "message": f"HTTP request failed: {result['error']}", "error": result['error']}, indent=2)
+            mcp_result = result.get("result", {})
+            success = mcp_result.get("statusCode") == 200 if "statusCode" in mcp_result else True
+            if success:
+                structured_response = ResponseMapper.map_tool_response("get_order", mcp_result)
+                return json.dumps(structured_response.dict(), indent=2)
+            return json.dumps(mcp_result, indent=2)
+        except Exception as e:
+            logger.error(f"Error running get_order: {e}")
+            return json.dumps({"success": False, "error": str(e)}, indent=2)
+
+    def create_order(orderType: str, InvoicePaymentMethods: List[int], deliveryType: str, userId: Optional[str] = None,
+                     addressId: Optional[str] = None, firstName: Optional[str] = None, lastName: Optional[str] = None,
+                     phoneNumber: Optional[str] = None, email: Optional[str] = None, note: Optional[str] = None,
+                     giftMsg: Optional[str] = None, code: Optional[str] = None, reservationDate: Optional[str] = None,
+                     browserId: Optional[str] = None) -> str:
+        """Create a new order from the user's cart.
+        Required: orderType (GIFT|RESERVATION|NORMAL), InvoicePaymentMethods (array of numbers), deliveryType (DELIVERY|PICKUP).
+        If deliveryType is DELIVERY, addressId is required. If orderType is RESERVATION, reservationDate is required."""
+        try:
+            # Determine userId from token if not provided
+            actual_user_id = userId
+            if not actual_user_id and mcp_client.user_token:
+                try:
+                    decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
+                    actual_user_id = decoded_token.get("email")
+                except Exception as e:
+                    logger.warning(f"Could not decode JWT token: {e}")
+            
+            args: Dict[str, Any] = {
+                "orderType": orderType,
+                "InvoicePaymentMethods": InvoicePaymentMethods,
+                "deliveryType": deliveryType,
+            }
+            if actual_user_id:
+                args["userId"] = actual_user_id
+            # Optional fields
+            if addressId is not None:
+                args["addressId"] = addressId
+            if firstName is not None:
+                args["firstName"] = firstName
+            if lastName is not None:
+                args["lastName"] = lastName
+            if phoneNumber is not None:
+                args["phoneNumber"] = phoneNumber
+            if email is not None:
+                args["email"] = email
+            if note is not None:
+                args["note"] = note
+            if giftMsg is not None:
+                args["giftMsg"] = giftMsg
+            if code is not None:
+                args["code"] = code
+            if reservationDate is not None:
+                args["reservationDate"] = reservationDate
+            if browserId is not None:
+                args["browserId"] = browserId
+            
+            url = f"{mcp_client.base_url}/execute"
+            payload = {"toolName": "create_order", "args": args}
+            headers = {"Content-Type": "application/json"}
+            if mcp_client.user_token:
+                headers["Authorization"] = f"Bearer {mcp_client.user_token}"
+            
+            result = make_sync_http_request(url, "POST", payload, headers)
+            if "error" in result:
+                return json.dumps({"success": False, "message": f"HTTP request failed: {result['error']}", "error": result['error']}, indent=2)
+            mcp_result = result.get("result", {})
+            success = mcp_result.get("statusCode") == 200 if "statusCode" in mcp_result else True
+            if success:
+                return json.dumps(mcp_result, indent=2)
+            return json.dumps(mcp_result, indent=2)
+        except Exception as e:
+            logger.error(f"Error running create_order: {e}")
+            return json.dumps({"success": False, "error": str(e)}, indent=2)
+
+    def cancel_order(id: str) -> str:
+        """Cancel an order by ID (requires auth)."""
+        try:
+            url = f"{mcp_client.base_url}/execute"
+            payload = {"toolName": "cancel_order", "args": {"id": id}}
+            headers = {"Content-Type": "application/json"}
+            if mcp_client.user_token:
+                headers["Authorization"] = f"Bearer {mcp_client.user_token}"
+            result = make_sync_http_request(url, "POST", payload, headers)
+            if "error" in result:
+                return json.dumps({"success": False, "message": f"HTTP request failed: {result['error']}", "error": result['error']}, indent=2)
+            mcp_result = result.get("result", {})
+            return json.dumps(mcp_result, indent=2)
+        except Exception as e:
+            logger.error(f"Error running cancel_order: {e}")
+            return json.dumps({"success": False, "error": str(e)}, indent=2)
+
+    def track_order(id: str) -> str:
+        """Track order status by ID (requires auth)."""
+        try:
+            url = f"{mcp_client.base_url}/execute"
+            payload = {"toolName": "track_order", "args": {"id": id}}
+            headers = {"Content-Type": "application/json"}
+            if mcp_client.user_token:
+                headers["Authorization"] = f"Bearer {mcp_client.user_token}"
+            result = make_sync_http_request(url, "POST", payload, headers)
+            if "error" in result:
+                return json.dumps({"success": False, "message": f"HTTP request failed: {result['error']}", "error": result['error']}, indent=2)
+            mcp_result = result.get("result", {})
+            return json.dumps(mcp_result, indent=2)
+        except Exception as e:
+            logger.error(f"Error running track_order: {e}")
+            return json.dumps({"success": False, "error": str(e)}, indent=2)
+    
     # Create StructuredTools
     tools = [
         StructuredTool.from_function(
@@ -808,11 +936,36 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
             description="Update quantity of item in cart",
             args_schema=UpdateCartItemInput
         ),
+        # New: order tools
         StructuredTool.from_function(
-            func=clear_cart,
-            name="clear_cart",
-            description="Clear user shopping cart",
-            args_schema=ClearCartInput
+            func=get_orders,
+            name="get_orders",
+            description="Get user's orders (requires auth). Optional: page, limit, status",
+            args_schema=GetOrdersInput
+        ),
+        StructuredTool.from_function(
+            func=get_order,
+            name="get_order",
+            description="Get a single order by ID (requires auth)",
+            args_schema=GetOrderInput
+        ),
+        StructuredTool.from_function(
+            func=create_order,
+            name="create_order",
+            description="Create a new order. Required: orderType (GIFT|RESERVATION|NORMAL), InvoicePaymentMethods (array of numbers), deliveryType (DELIVERY|PICKUP). If deliveryType=DELIVERY then addressId is required.",
+            args_schema=CreateOrderInput
+        ),
+        StructuredTool.from_function(
+            func=cancel_order,
+            name="cancel_order",
+            description="Cancel an order by ID (requires auth)",
+            args_schema=CancelOrderInput
+        ),
+        StructuredTool.from_function(
+            func=track_order,
+            name="track_order",
+            description="Track an order by ID (requires auth)",
+            args_schema=TrackOrderInput
         )
     ]
     
@@ -843,35 +996,13 @@ class EcommerceAgent:
         logger.info("🔧 Initializing helper modules")
         # Initialize AI-powered intent detector with Azure config and MCP client
         self.intent_detector = IntentDetector(mcp_client, self.llm)
-        self.parameter_validator = ParameterValidator(mcp_client)
+        self.prompt_registry = PromptRegistry()
+        self.parameter_validator = ParameterValidator(mcp_client, self.prompt_registry)
         self.missing_param_handler = MissingParameterHandler(self.parameter_validator)
         self.product_resolver = ProductResolver(mcp_client)
         self.response_formatter = ResponseFormatter()
         
         logger.info("✅ EcommerceAgent initialization completed")
-        
-        # Customer-facing operation specifications
-        self.customer_operation_specs: Dict[str, List[str]] = {
-            # Products & Shopping
-            "browse_products": ["category"],  # filters optional
-            "search_product": ["keywords"],
-            "view_product_details": ["product_id"],
-            "add_to_cart": ["product_id", "quantity"],
-            "clear_cart": ["customer_id"],
-            "view_cart": ["customer_id"],
-            "remove_from_cart": ["product_id"],
-            # Orders
-            "place_order": ["customer_id", "cart_items", "shipping_address", "payment_method"],
-            "track_order": ["order_id"],
-            "cancel_order": ["order_id"],
-            "view_orders": ["customer_id"],
-            # Payments
-            "checkout": ["order_id", "payment_method"],
-            "refund_request": ["order_id", "reason"],
-            # Delivery & Returns
-            "delivery_status": ["order_id"],
-            "return_order": ["order_id", "reason"],
-        }
         
     def set_user_token(self, token: str):
         """Set the user token for authentication"""
@@ -1103,170 +1234,6 @@ Please generate a natural question to ask the user for the missing information."
             logger.error(f"❌ Failed to initialize agent: {e}")
             raise
 
-    async def inject_customer_action_prompt(self, user_input: str, customer_obj: Optional[Dict[str, Any]] = None) -> str:
-        """Detect customer intent, gather info from profile/cart context, and return ONLY the injected prompt string."""
-        customer_obj = customer_obj or {}
-        operation = self._detect_customer_operation(user_input)
-        if not operation:
-            return "What would you like to do: browse, search, buy, pay, track, or return?"
-        required = self.customer_operation_specs.get(operation, [])
-        params_from_text = self._extract_customer_params_from_text(operation, user_input)
-        params = self._fill_from_customer_object(params_from_text, customer_obj)
-        missing = [f for f in required if f not in params or params.get(f) in (None, "", [], {})]
-        if missing:
-            return self._compose_missing_question(missing)
-        return self._build_customer_action_prompt(operation, params)
-
-    def _detect_customer_operation(self, user_input: str) -> Optional[str]:
-        """Lightweight keyword-based detection for customer operations."""
-        text = user_input.lower()
-        # Products & Shopping
-        if any(k in text for k in ["browse", "show ", "all products", "categories"]):
-            return "browse_products"
-        if any(k in text for k in ["search", "find", "looking for"]):
-            return "search_product"
-        if any(k in text for k in ["details", "view product", "show details", "specs"]):
-            return "view_product_details"
-        if any(k in text for k in ["add to cart", "buy", "purchase", "i want to buy", "add "]):
-            return "add_to_cart"
-        if any(k in text for k in ["clear cart", "empty cart", "remove all", "reset cart"]):
-            return "clear_cart"
-        if any(k in text for k in ["view cart", "my cart", "cart"]):
-            return "view_cart"
-        if any(k in text for k in ["remove from cart", "remove ", "delete from cart"]):
-            return "remove_from_cart"
-        # Orders
-        if any(k in text for k in ["place order", "checkout my cart", "complete purchase", "buy now"]):
-            return "place_order"
-        if any(k in text for k in ["track order", "where is my order", "delivery status", "track "]):
-            return "track_order"
-        if "cancel" in text and "order" in text:
-            return "cancel_order"
-        if any(k in text for k in ["my orders", "view orders", "order history"]):
-            return "view_orders"
-        # Payments
-        if any(k in text for k in ["checkout", "pay", "payment"]):
-            return "checkout"
-        if any(k in text for k in ["refund", "money back", "return my money"]):
-            return "refund_request"
-        # Delivery & Returns
-        if any(k in text for k in ["delivery status", "where is my", "status of order"]):
-            return "delivery_status"
-        if any(k in text for k in ["return order", "return it", "send back"]):
-            return "return_order"
-        return None
-
-    def _extract_customer_params_from_text(self, operation: str, user_input: str) -> Dict[str, Any]:
-        """Heuristic extraction from free text for common fields."""
-        import re, json as _json
-        text = user_input
-        out: Dict[str, Any] = {}
-        # Product and order identifiers
-        pid = re.search(r"product\s*(?:id)?\s*[:#]?\s*([\w-]+)", text, re.I)
-        if pid:
-            out["product_id"] = pid.group(1)
-        oid = re.search(r"order\s*(?:id)?\s*[:#]?\s*([\w-]+)", text, re.I)
-        if oid:
-            out["order_id"] = oid.group(1)
-        qty = re.search(r"(?:qty|quantity)\s*[:=]?\s*(\d+)", text, re.I)
-        if qty:
-            out["quantity"] = int(qty.group(1))
-        # Keywords for search
-        if operation == "search_product":
-            # capture quotes or trailing words after 'search'
-            m = re.search(r"search(?: for)?\s+([^\n]+)", text, re.I)
-            if m:
-                out["keywords"] = m.group(1).strip().strip(".!")
-            quotes = re.findall(r"'([^']+)'|\"([^\"]+)\"", text)
-            if quotes and "keywords" not in out:
-                out["keywords"] = (quotes[0][0] or quotes[0][1])
-        # Category for browsing
-        if operation == "browse_products":
-            m = re.search(r"(?:in|category|categories?)\s+([A-Za-z &/-]+)", text, re.I)
-            if m:
-                out["category"] = m.group(1).strip()
-        # Reasons
-        if any(k in operation for k in ["refund_request", "return_order"]):
-            m = re.search(r"because\s+(.+)$", text, re.I)
-            if m:
-                out["reason"] = m.group(1).strip()
-        return out
-
-    def _fill_from_customer_object(self, params: Dict[str, Any], customer_obj: Dict[str, Any]) -> Dict[str, Any]:
-        """Fill missing fields from customer profile/cart context."""
-        filled = dict(params)
-        def pick(keys: List[str]):
-            for k in keys:
-                if k in customer_obj and customer_obj[k]:
-                    return customer_obj[k]
-            return None
-        if "customer_id" not in filled:
-            cid = pick(["customer_id", "id", "user_id"])
-            if cid is not None:
-                filled["customer_id"] = cid
-        if "shipping_address" not in filled:
-            addr = pick(["shipping_address", "default_address", "address"])
-            if addr is not None:
-                filled["shipping_address"] = addr
-        if "payment_method" not in filled:
-            pm = pick(["payment_method", "default_payment", "card"])
-            if pm is not None:
-                filled["payment_method"] = pm
-        if "cart_items" not in filled and "cart" in customer_obj and customer_obj.get("cart"):
-            filled["cart_items"] = customer_obj["cart"]
-        if "order_id" not in filled and customer_obj.get("last_order_id"):
-            filled["order_id"] = customer_obj["last_order_id"]
-        return filled
-
-    def _compose_missing_question(self, missing_fields: List[str]) -> str:
-        readable = [f.replace("_", " ") for f in missing_fields]
-        if len(readable) == 1:
-            return f"Could you share your {readable[0]} to proceed?"
-        if len(readable) == 2:
-            return f"Could you share your {readable[0]} and {readable[1]} to proceed?"
-        return f"To help you faster, could you share: {', '.join(readable[:-1])}, and {readable[-1]}?"
-
-    def _build_customer_action_prompt(self, operation: str, p: Dict[str, Any]) -> str:
-        """Build the exact final prompt strings for customer operations."""
-        if operation == "browse_products":
-            filters = p.get("filters", {})
-            return (
-                f"Show me all {p.get('category','')} with filters: {json.dumps(filters)}" if filters else
-                f"Show me all {p.get('category','')}"
-            )
-        if operation == "search_product":
-            return f"Search products matching: {p.get('keywords','')}"
-        if operation == "view_product_details":
-            return f"Show details for product {p.get('product_id','')}"
-        if operation == "add_to_cart":
-            return f"Add {p.get('quantity',1)} of product {p.get('product_id','')} to the customer’s cart"
-        if operation == "clear_cart":
-            return f"Clear the cart for customer {p.get('customer_id','')}"
-        if operation == "view_cart":
-            return f"Show current cart for customer {p.get('customer_id','')}"
-        if operation == "remove_from_cart":
-            return f"Remove product {p.get('product_id','')} from the cart"
-        if operation == "place_order":
-            return (
-                f"Place a new order for customer {p.get('customer_id','')} with items: {json.dumps(p.get('cart_items', []))}, "
-                f"shipping to {p.get('shipping_address','')}, paid via {p.get('payment_method','')}"
-            )
-        if operation == "track_order":
-            return f"Track order {p.get('order_id','')}"
-        if operation == "cancel_order":
-            return f"Cancel order {p.get('order_id','')}"
-        if operation == "view_orders":
-            return f"Show all orders for customer {p.get('customer_id','')}"
-        if operation == "checkout":
-            return f"Process checkout for order {p.get('order_id','')} using {p.get('payment_method','')}"
-        if operation == "refund_request":
-            return f"Request refund for order {p.get('order_id','')} because {p.get('reason','')}"
-        if operation == "delivery_status":
-            return f"Get delivery status for order {p.get('order_id','')}"
-        if operation == "return_order":
-            return f"Request return for order {p.get('order_id','')} because {p.get('reason','')}"
-        return ""
-
     async def handle_user_request(self, user_input: str, user_token: Optional[str] = None, user_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Enhanced method using LLM to analyze requests with conversation context, handle pagination, and return structured data
@@ -1325,8 +1292,8 @@ Please generate a natural question to ask the user for the missing information."
             # Step 2: Advanced LLM analysis with error handling
             logger.info("🤖 Step 2: Using LLM to analyze request and determine requirements")
             try:
-                llm_analysis  = self.intent_detector.detect_intent(user_input)
-                logger.info(f"✅ Intent detected: {llm_analysis}")
+                llm_analysis = await self._analyze_request_with_llm(user_input, conversation_context)
+                logger.info(f"✅ LLM Analysis completed: Intent={llm_analysis.get('intent')}, Confidence={llm_analysis.get('confidence')}")
             except Exception as e:
                 logger.error(f"❌ LLM analysis failed: {e}")
                 response_data.update({
@@ -1337,11 +1304,10 @@ Please generate a natural question to ask the user for the missing information."
             
             # Step 3: Authentication validation with detailed logging
             logger.info("🔐 Step 3: Checking authentication requirements")
-            requires_auth = bool(getattr(llm_analysis, 'requires_auth', False))
+            requires_auth = llm_analysis.get('requires_auth', False)
             
             if requires_auth and not user_token:
-                intent_name = getattr(llm_analysis, 'tool_name', 'unknown')
-                logger.warning(f"❌ Authentication required for '{intent_name}' but no token provided")
+                logger.warning(f"❌ Authentication required for '{llm_analysis.get('intent')}' but no token provided")
                 response_data.update({
                     "response": "You need to be logged in to perform this action. Please login first with your email and password.",
                     "error": "Authentication required",
@@ -1355,8 +1321,7 @@ Please generate a natural question to ask the user for the missing information."
             
             # Step 4: Handle missing information with user interaction
             logger.info("📋 Step 4: Checking for missing information and parameters")
-            # IntentResult has no extracted values; default to no missing params here
-            missing_info: List[str] = []
+            missing_info = llm_analysis.get('missing_info', [])
             
             if missing_info:
                 logger.info(f"❌ Missing information detected: {missing_info}")
@@ -1374,7 +1339,7 @@ Please generate a natural question to ask the user for the missing information."
                         user_input, 
                         missing_info,
                         conversation_context,
-                        getattr(llm_analysis, 'tool_name', 'unknown')
+                        llm_analysis.get('intent', 'unknown')
                     )
                     
                     # Save assistant question
@@ -1390,7 +1355,7 @@ Please generate a natural question to ask the user for the missing information."
                         "requires_input": True,
                         "data": {
                             "missing_parameters": missing_info,
-                            "intent": getattr(llm_analysis, 'tool_name', None),
+                            "intent": llm_analysis.get('intent'),
                             "context": "clarification_needed"
                         }
                     })
@@ -1410,7 +1375,7 @@ Please generate a natural question to ask the user for the missing information."
             
             try:
                 # Determine if this is a data retrieval request that needs pagination
-                intent = getattr(llm_analysis, 'tool_name', 'unknown')
+                intent = llm_analysis.get('intent', 'unknown')
                 is_data_request = intent in ['get_products', 'search_products', 'get_orders', 'get_cart']
                 
                 if is_data_request:
@@ -1420,7 +1385,7 @@ Please generate a natural question to ask the user for the missing information."
                         conversation_messages, 
                         user_token, 
                         user_id,
-                        {"intent": intent}
+                        llm_analysis
                     )
                 else:
                     logger.info(f"⚡ Executing action request: {intent}")
@@ -1429,7 +1394,7 @@ Please generate a natural question to ask the user for the missing information."
                         conversation_messages, 
                         user_token, 
                         user_id,
-                        {"intent": intent}
+                        llm_analysis
                     )
                 
                 # Process and structure the result
@@ -1481,7 +1446,7 @@ Please generate a natural question to ask the user for the missing information."
                                   user_token: str, user_id: str, llm_analysis: Dict) -> Dict[str, Any]:
         """Execute data retrieval requests with pagination support"""
         try:
-            intent = llm_analysis.get('intent', 'unknown') if isinstance(llm_analysis, dict) else getattr(llm_analysis, 'tool_name', 'unknown')
+            intent = llm_analysis.get('intent', 'unknown')
             logger.info(f"📊 Executing data request: {intent}")
             
             # Check if agent is properly initialized
@@ -1546,7 +1511,7 @@ Please generate a natural question to ask the user for the missing information."
                                     user_token: str, user_id: str, llm_analysis: Dict) -> Dict[str, Any]:
         """Execute action requests (non-data retrieval)"""
         try:
-            intent = llm_analysis.get('intent', 'unknown') if isinstance(llm_analysis, dict) else getattr(llm_analysis, 'tool_name', 'unknown')
+            intent = llm_analysis.get('intent', 'unknown')
             logger.info(f"⚡ Executing action request: {intent}")
             
             # Check if agent is properly initialized
@@ -1724,76 +1689,48 @@ Please generate a natural question to ask the user for the missing information."
             logger.info("🔧 Creating LangChain agent with tools")
             
             # Create the system prompt for the agent
-            system_prompt = """You are an AI assistant for an e-commerce platform. You can help users with various e-commerce operations.
-
-CORE PRINCIPLES FOR ALL ACTIONS:
-
-1. **Data Presentation**: For ALL read operations (getting, searching, viewing, listing data), always present the data in clean JSON format wrapped in ```json``` code blocks. The tools return structured JSON data - present this data clearly and concisely in the JSON format. Format your response as: "Here's the data you requested:" followed by the JSON block.
-
-2. **Parameter Handling**: For ALL actions that require parameters:
-   - If required parameters are missing, ask the user for them clearly and wait for their response    - Extract available information from the user's message first
-   - If you can infer missing parameters from context, do so intelligently
-   - Always validate that you have all required parameters before executing an action
-   - For product IDs: Look for patterns like "68c5fff6fb9060f2b15b6944" or "product 68c5fff6fb9060f2b15b6944"
-   - For product names: Extract the product name from phrases like "details of this product [name]" or "show me [product name]"
-   - For cart operations: Use the most recently discussed product ID from conversation history
-   - CRITICAL: When user says "give me the details of this product 68c5fff6fb9060f2b15b6944", you MUST extract the ID "68c5fff6fb9060f2b15b6944" and pass it as {{"id": "68c5fff6fb9060f2b15b6944"}} to the get_product tool
-
-3. **Error Handling**: For ALL tool executions:
-   - If a tool execution fails, provide a clear error message to the user
-   - Suggest alternative actions or ask for clarification
-   - Never leave the user without feedback
-
-4. **User Experience**: For ALL interactions:
-   - Be conversational and helpful
-   - Provide clear feedback on successful operations
-   - Ask for clarification when needed
-   - Guide users through multi-step processes
-
-5. **Authentication**: For ALL actions that require user context:
-   - Use the provided user token when available
-   - Handle authentication errors gracefully
-   - Guide users to authenticate when needed
-
-6. **CONTEXTUAL UNDERSTANDING** (CRITICAL):
-   - ALWAYS maintain conversation context and remember what the user is referring to
-   - When user uses pronouns like "it", "this", "that", "the first one" - understand what they're referring to from the conversation history
-   - When user says "give me more", "show me more", "next", "continue" - understand what they want more of based on the previous conversation
-   - For "give me more products" - look at the last product list in conversation history and increment the page number
-   - When user says "add it to cart" - use the most recently discussed product
-   - When user asks "how many?" - understand they're asking about quantity for the current action
-   - When user says "remove the first item" - understand they mean the first item in their cart
-   - Keep track of the last action performed and continue from there
-
-   - If context is unclear, ask specific clarifying questions rather than generic ones
-   - Use the conversation history to understand references and maintain context
-
-7. **PAGINATION HANDLING** (CRITICAL):
-   - When user asks for "more products", "next page", "show more", "continue" after a product list - automatically increment the page number
-   - Look at the conversation history to find the last product list response
-   - Extract the page number from the previous response (it should be in the data object)
-   - If the previous response showed page 1, use page 2. If page 2, use page 3, etc.
-   - Always use the same limit (number of products per page) as the previous request
-   - If no previous pagination context exists, start with page 1
-   - When showing paginated results, always include the current page number in your response
-   - If you reach the last page, inform the user that there are no more products
-   - Example: If previous response had {{"page": 1, "limit": 10}}, then next request should use {{"page": 2, "limit": 10}}
-
-AVAILABLE TOOL CATEGORIES:
-- Authentication: User login, registration, logout, token refresh
-- Products: Browse, search, view products and categories
-- Cart: Manage shopping cart items
-- Orders: Create, view, track, and manage orders
-- User: Profile and address management
-
-EXAMPLES OF PARAMETER EXTRACTION:
-- User: "give me the details of this product 68c5fff6fb9060f2b15b6944" → Use get_product with {{"id": "68c5fff6fb9060f2b15b6944"}}
-- User: "show me more products" → Use get_products with {{"page": 2}} (if previous was page 1)
-- User: "add it to cart" → Use add_to_cart with the most recent product ID from conversation history
-- User: "search for laptops" → Use search_products with {{"query": "laptops"}}
-
-Remember: Apply these principles to ALL actions, not just specific ones. Use the available tools dynamically based on user intent, and always follow the core principles above. MOST IMPORTANTLY: Maintain conversation context and understand what the user is referring to."""
-
+            system_prompt = """You are a helpful e-commerce assistant that can help users:
+            
+            1. Browse and search products
+            2. Get detailed product information
+            3. Manage shopping cart (add, remove, update items)
+            4. View cart contents
+            5. Place and manage orders (create orders, view orders, cancel, track)
+            6. Provide general assistance
+            
+            IMPORTANT PRODUCT RESPONSE REQUIREMENTS:
+            - When users ask for products, ALWAYS use the appropriate tools to search or get product information
+            - For product queries (browsing, searching, or listing products), your response MUST include:
+              1. A clear, user-friendly description of the products found
+              2. The complete product data in a structured format within your response
+              3. Pagination information (current page, total pages, items per page) when applicable
+              4. Clear indication of how many products were found and displayed
+            
+            - When displaying product lists, structure your response like this:
+              "I found X products for you. Here are the results (page Y of Z):
+              
+              [User-friendly product descriptions]
+              
+              Product Data:
+              {{\"products\": [...], \"pagination\": {{\"page\": 1, \"limit\": 10, \"total\": X, \"totalPages\": Y}}}}"
+            
+            - For single product details, include the complete product object in your response
+            - Always mention pagination details when showing product lists
+            - If no products are found, clearly state this and suggest alternatives
+            
+            CART AND AUTH REQUIREMENTS:
+            - When users want to manage their cart, use the cart-related tools
+            - If you need user authentication for cart operations, let them know they need to log in first
+            - Always be helpful, friendly, and provide clear information
+            
+            ORDER OPERATIONS:
+            - To place an order, call the create_order tool. It requires: orderType (GIFT|RESERVATION|NORMAL), InvoicePaymentMethods (array of numbers), and deliveryType (DELIVERY|PICKUP).
+            - If deliveryType is DELIVERY, an addressId is required. If orderType is RESERVATION, reservationDate is required.
+            - If any required info is missing, ask the user for it and list allowed values for enums.
+            - For viewing or tracking orders, use get_orders, get_order, or track_order. To cancel, use cancel_order.
+            
+            Use the available tools to fulfill user requests and provide accurate, up-to-date information.
+            Ensure that product- and order-related responses contain the actual data for frontend consumption when applicable."""
 
             # Create the prompt template
             prompt = ChatPromptTemplate.from_messages([
@@ -1882,52 +1819,29 @@ Remember: Apply these principles to ALL actions, not just specific ones. Use the
                 import json
                 import re
                 
-                # 1) Prefer fenced code blocks ```json ... ``` or ``` ... ```
-                fenced_match = re.search(r"```(?:json)?\n([\s\S]*?)\n```", response_text, re.IGNORECASE)
-                if fenced_match:
-                    fenced_content = fenced_match.group(1).strip()
+                # Look for product data patterns in the response
+                json_matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
+                
+                for json_str in json_matches:
                     try:
-                        parsed_fenced = json.loads(fenced_content)
-                        structured_data = parsed_fenced
-                        # Remove the fenced block from the human-friendly text
-                        response_text = (response_text[:fenced_match.start()] + response_text[fenced_match.end():]).strip()
-                    except Exception:
-                        # If fenced block isn't valid JSON, keep going and try object regex
-                        pass
-                
-                # Look for JSON objects in the response
-                if structured_data is None:
-                    json_matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
-                
-                    for json_str in json_matches:
-                        try:
-                            parsed_json = json.loads(json_str)
+                        parsed_json = json.loads(json_str)
+                        
+                        # Check if this contains product data
+                        if 'products' in parsed_json or 'product' in parsed_json:
+                            structured_data = parsed_json
                             
-                            # Prefer the unified schema: items + pagination
-                            if 'items' in parsed_json and 'pagination' in parsed_json:
-                                structured_data = parsed_json
-                                pagination_data = parsed_json.get('pagination')
-                                break
-                            # Back-compat: products list shape
-                            if 'products' in parsed_json:
-                                items = parsed_json.get('products', [])
-                                pg = parsed_json.get('pagination') or {
-                                    'page': parsed_json.get('page', 1),
-                                    'limit': parsed_json.get('limit', 10),
-                                    'total': parsed_json.get('total', len(items)),
-                                    'totalPages': parsed_json.get('total_pages') or parsed_json.get('totalPages'),
-                                    'hasMore': parsed_json.get('has_more', False)
-                                }
-                                structured_data = {'items': items, 'pagination': pg}
-                                pagination_data = pg
-                                break
-                            # Single item detail
-                            if '_id' in parsed_json and isinstance(parsed_json, dict):
-                                structured_data = parsed_json
-                                break
+                            # Extract pagination info if present
+                            if 'pagination' in parsed_json:
+                                pagination_data = parsed_json['pagination']
+                            break
                             
-                        except json.JSONDecodeError:
-                            continue
+                        # Check if this is a single product
+                        elif '_id' in parsed_json and 'name' in parsed_json:
+                            structured_data = {'product': parsed_json}
+                            break
+                            
+                    except json.JSONDecodeError:
+                        continue
                         
             except Exception as e:
                 logger.debug(f"No structured data found in response: {e}")
@@ -1940,8 +1854,6 @@ Remember: Apply these principles to ALL actions, not just specific ones. Use the
                 "pagination": pagination_data,
                 "intermediate_steps": result.get('intermediate_steps', [])
             }
-            # Provide a content alias for frontend convenience
-            response_data["content"] = response_text
 
             # Add metadata for frontend consumption
             if structured_data:
@@ -1957,7 +1869,6 @@ Remember: Apply these principles to ALL actions, not just specific ones. Use the
                 response_data['type'] = 'text_only'
 
             logger.info("✅ Chat request processed successfully")
-            logger.info(f"Response data: {response_data}")
             return response_data
 
         except Exception as e:
@@ -1968,3 +1879,54 @@ Remember: Apply these principles to ALL actions, not just specific ones. Use the
                 "error": str(e),
                 "data": None
             }
+    
+    # --- Utility methods used by the API and tests ---
+    async def get_available_tools(self) -> List[Dict[str, Any]]:
+        """Return available MCP tools with schema."""
+        try:
+            tools = self.mcp_client.get_tools() or []
+            result = []
+            for t in tools:
+                # Support both dataclass MCPTool and dict
+                if isinstance(t, dict):
+                    result.append({
+                        "name": t.get("name"),
+                        "description": t.get("description"),
+                        "input_schema": t.get("input_schema") or t.get("inputSchema") or {}
+                    })
+                else:
+                    result.append({
+                        "name": getattr(t, "name", None),
+                        "description": getattr(t, "description", None),
+                        "input_schema": getattr(t, "input_schema", {})
+                    })
+            return result
+        except Exception as e:
+            logger.error(f"Failed to get available tools: {e}")
+            return []
+
+    async def call_tool_directly(self, tool_name: str, arguments: Dict[str, Any]) -> str:
+        """Call an MCP tool directly and return JSON string result."""
+        try:
+            # Ensure MCP client is ready
+            if not self.mcp_client.session:
+                await self.mcp_client.start()
+            # Execute tool with current user token if set
+            token = getattr(self, "user_token", None) or self.mcp_client.user_token
+            resp = await self.mcp_client.execute_tool(tool_name, arguments, user_token=token)
+            if resp.success:
+                try:
+                    return json.dumps(resp.data, indent=2)
+                except Exception:
+                    return json.dumps({"result": resp.data}, indent=2)
+            return json.dumps({"success": False, "error": resp.error or "Unknown error"}, indent=2)
+        except Exception as e:
+            logger.error(f"Direct tool call failed for {tool_name}: {e}")
+            return json.dumps({"success": False, "error": str(e)}, indent=2)
+
+    async def shutdown(self):
+        """Cleanly shutdown resources (MCP client)."""
+        try:
+            await self.mcp_client.stop()
+        except Exception as e:
+            logger.warning(f"Error during shutdown: {e}")

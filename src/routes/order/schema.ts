@@ -13,7 +13,7 @@ export default {
   }),
 
   checkout: Joi.object().keys({
-    userId: JoiObjectId(),
+    userId: Joi.string(),
     browserId: Joi.string(),
     firstName: Joi.string(),
     lastName: Joi.string(),
@@ -28,7 +28,7 @@ export default {
     orderType: Joi.string()
       .valid(OrderType.GIFT, OrderType.RESERVATION, OrderType.NORMAL)
       .required(),
-    addressId: JoiObjectId(),
+    addressId: Joi.string(),
     code: Joi.string(),
     reservationDate: Joi.date(),
     InvoicePaymentMethods: Joi.array().items(Joi.number()).required(),

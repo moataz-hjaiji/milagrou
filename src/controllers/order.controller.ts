@@ -18,7 +18,7 @@ export const checkout = asyncHandler(
       addressId,
       code,
       userId,
-      browserId,
+      // browserId,
       note,
       giftMsg,
       InvoicePaymentMethods,
@@ -30,7 +30,7 @@ export const checkout = asyncHandler(
 
     const result = await orderService.checkout({
       userId,
-      browserId,
+      // browserId,
       deliveryType,
       orderType,
       reservationDate,
