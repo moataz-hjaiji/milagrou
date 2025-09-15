@@ -439,7 +439,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
                     import jwt
                     # Decode the JWT token to get user information
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("email", "your@email.com")
+                    actual_user_id = decoded_token.get("user_id", "your@email.com")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}, using default user ID")
             else:
@@ -512,7 +512,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
                 try:
                     import jwt
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("email", "youremail.com")
+                    actual_user_id = decoded_token.get("user_id", "youremail.com")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}, using default user ID")
             else:
@@ -585,7 +585,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
                     import jwt
                     # Decode the JWT token to get user information
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("email", "youremail.com")
+                    actual_user_id = decoded_token.get("user_id", "youremail.com")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}, using default user ID")
             else:
@@ -657,7 +657,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
                 try:
                     import jwt
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("email", "youremail.com")
+                    actual_user_id = decoded_token.get("user_id", "youremail.com")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}, using default user ID")
             else:
@@ -728,7 +728,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
             if mcp_client.user_token:
                 try:
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("email")
+                    actual_user_id = decoded_token.get("user_id")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}")
             
@@ -769,7 +769,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
             if mcp_client.user_token:
                 try:
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("email")
+                    actual_user_id = decoded_token.get("user_id")
                     if actual_user_id:
                         args["userId"] = actual_user_id
                 except Exception as e:
@@ -807,7 +807,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
             if not actual_user_id and mcp_client.user_token:
                 try:
                     decoded_token = jwt.decode(mcp_client.user_token, options={"verify_signature": False})
-                    actual_user_id = decoded_token.get("email")
+                    actual_user_id = decoded_token.get("user_id")
                 except Exception as e:
                     logger.warning(f"Could not decode JWT token: {e}")
             

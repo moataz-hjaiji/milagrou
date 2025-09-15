@@ -95,7 +95,7 @@ app.post('/execute', authenticateToken, async (req, res) => {
     console.log(`Tool execution request from user: ${user.email} (ID: ${user.id})`);
     
     // Add user context to args only for tools that need it
-    let argsWithUser = { ...args };
+    let argsWithUser = { ...(args || {}) } as Record<string, any>;
     
     // Only add user context for tools that require it
     if (toolName.startsWith('get_cart') || toolName.startsWith('add_to_cart') || 
@@ -105,12 +105,26 @@ app.post('/execute', authenticateToken, async (req, res) => {
         toolName.startsWith('update_profile') || toolName.startsWith('get_address') || 
         toolName.startsWith('add_address') || toolName.startsWith('update_address') || 
         toolName.startsWith('delete_address')) {
+      // Prefer provided userId, fallback to authenticated user
       argsWithUser = {
-        ...args,
-        // Only add user context if not already provided
-        userId: args.userId || user.id,
-        userEmail: args.userEmail || user.email
+        ...argsWithUser,
+        userId: argsWithUser.userId || user.id
+        // Do NOT include userEmail here; it is not part of most tool schemas and can break downstream APIs
       };
+    }
+
+    // Schema-based filtering: only forward properties defined in the tool's inputSchema
+    try {
+      const allTools = toolManager.getAllTools();
+      const toolDef = allTools.find(t => t.name === toolName);
+      const allowedProps = Object.keys((toolDef as any)?.inputSchema?.properties || {});
+      if (allowedProps.length > 0) {
+        argsWithUser = Object.fromEntries(
+          Object.entries(argsWithUser).filter(([key]) => allowedProps.includes(key))
+        );
+      }
+    } catch (e) {
+      console.warn('Schema-based arg filtering failed; proceeding without filtering', e);
     }
     
     const result = await toolManager.executeTool(toolName, argsWithUser);

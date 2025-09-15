@@ -14,7 +14,7 @@ export default {
 
   checkout: Joi.object().keys({
     userId: Joi.string(),
-    browserId: Joi.string(),
+    browserId: Joi.string().optional().allow(null, ''),
     firstName: Joi.string(),
     lastName: Joi.string(),
     phoneNumber: Joi.string(),
@@ -32,6 +32,7 @@ export default {
     code: Joi.string(),
     reservationDate: Joi.date(),
     InvoicePaymentMethods: Joi.array().items(Joi.number()).required(),
+    userEmail: Joi.string().optional(), 
   }),
 
   checkoutAdmin: Joi.object().keys({

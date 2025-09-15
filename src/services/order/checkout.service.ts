@@ -120,13 +120,13 @@ export const checkout = async ({
 
     let orderPrice = orderPriceWithoutDeliveryPrice;
 
-    if (deliveryType === DeliveryType.DELIVERY) {
-      const address = await AddressRepo.findById(addressId!, {
-        populate: 'areaId',
-      });
-      if (!address) throw new NotFoundError('address not found');
-      orderPrice += (address.areaId as IArea).deliveryPrice;
-    }
+    // if (deliveryType === DeliveryType.DELIVERY) {
+    //   const address = await AddressRepo.findById(addressId!, {
+    //     populate: 'areaId',
+    //   });
+    //   if (!address) throw new NotFoundError('address not found');
+    //   orderPrice += (address.areaId as IArea).deliveryPrice;
+    // }
 
     const orderNewIdCheck = await OrderRepo.getLastNewId();
 
@@ -260,13 +260,13 @@ export const checkout = async ({
 
     let orderPrice = orderPriceWithoutDeliveryPrice;
 
-    if (deliveryType === DeliveryType.DELIVERY) {
-      const address = await AddressRepo.findById(addressId!, {
-        populate: 'areaId',
-      });
-      if (!address) throw new NotFoundError('address not found');
-      orderPrice += (address.areaId as IArea).deliveryPrice;
-    }
+    // if (deliveryType === DeliveryType.DELIVERY) {
+    //   const address = await AddressRepo.findById(addressId!, {
+    //     populate: 'areaId',
+    //   });
+    //   if (!address) throw new NotFoundError('address not found');
+    //   orderPrice += (address.areaId as IArea).deliveryPrice;
+    // }
 
     const orderNewIdCheck = await OrderRepo.getLastNewId();
 
