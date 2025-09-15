@@ -208,7 +208,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
         """Get single product by ID"""
         try:
             # Make direct HTTP request to MCP server
-            url = f"{mcp_client.base_url}/execute"
+            url = f"{mcp_client.base_url}fexecute"
             payload = {
                 "toolName": "get_product",
                 "args": {"id": id}
@@ -807,18 +807,111 @@ class EcommerceAgent:
             logger.error(f"Error in send_prompt_to_user: {e}")
             return {"question": prompt_message, "requires_user_input": True}
 
-    def _build_conversation_context(self, messages: List) -> str:
-        """Build context string from previous conversation messages"""
-        if not messages:
+    async def _analyze_request_with_llm(self, user_input: str, conversation_context: str) -> Dict[str, Any]:
+        """Use LLM to analyze user request and determine intent, requirements, and missing information"""
+        try:
+            # Construct analysis prompt
+            analysis_prompt = f"""
+            You are an intelligent e-commerce assistant. Analyze the following user request and conversation context to determine:
+            1. The user's intent
+            2. What parameters are required
+            3. What information is missing
+            4. Whether authentication is required
+            5. Confidence level (0.0-1.0)
+
+            User Request: "{user_input}"
+            
+            Conversation Context:
+            {conversation_context}
+
+            Available intents and their requirements:
+            - get_products: Optional[page, limit, category, search, minPrice, maxPrice]
+            - search_products: Required[query], Optional[limit]
+            - get_product: Required[id]
+            - add_to_cart: Required[productId], Optional[quantity], Requires Auth
+            - remove_from_cart: Required[productId], Requires Auth
+            - update_cart_item: Required[productId, quantity], Requires Auth
+            - get_cart: Requires Auth
+            - get_orders: Requires Auth
+            - create_order: Requires Auth
+            - login: Required[email, password]
+            - register: Required[email, password, name]
+            - general_chat: No specific requirements
+
+            Respond in JSON format:
+            {{
+                "intent": "intent_name",
+                "confidence": 0.9,
+                "requires_auth": true/false,
+                "required_parameters": ["param1", "param2"],
+                "missing_info": ["missing_param1"],
+                "extracted_parameters": {{"param": "value"}},
+                "reasoning": "Brief explanation of the analysis"
+            }}
+            """
+
+            # Use the LLM to analyze
+            llm_response = await self.llm.ainvoke(analysis_prompt)
+            
+            # Parse JSON response
+            import json
+            try:
+                analysis_result = json.loads(llm_response.content)
+                logger.debug(f"LLM analysis result: {analysis_result}")
+                return analysis_result
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse LLM analysis JSON: {e}")
+                # Fallback analysis
+                return {
+                    "intent": "general_chat",
+                    "confidence": 0.5,
+                    "requires_auth": False,
+                    "required_parameters": [],
+                    "missing_info": [],
+                    "extracted_parameters": {},
+                    "reasoning": "Failed to parse LLM response, defaulting to general chat"
+                }
+                
+        except Exception as e:
+            logger.error(f"LLM analysis failed: {e}")
+            # Return safe fallback
+            return {
+                "intent": "general_chat",
+                "confidence": 0.3,
+                "requires_auth": False,
+                "required_parameters": [],
+                "missing_info": [],
+                "extracted_parameters": {},
+                "reasoning": f"Analysis failed: {str(e)}"
+            }
+
+    def _build_conversation_context(self, conversation_messages: List) -> str:
+        """Build a readable conversation context from messages"""
+        if not conversation_messages:
             return "No previous conversation."
+            
+        context_lines = []
+        context_lines.append("Recent Conversation:")
         
-        context_parts = []
-        for msg in messages[-5:]:  # Last 5 messages for context
-            role = msg.role if hasattr(msg, 'role') else msg.get('role', 'unknown')
-            content = msg.content if hasattr(msg, 'content') else msg.get('content', '')
-            context_parts.append(f"{role.capitalize()}: {content}")
+        # Take last 10 messages to keep context manageable
+        recent_messages = conversation_messages[-10:] if len(conversation_messages) > 10 else conversation_messages
         
-        return "\n".join(context_parts)
+        for msg in recent_messages:
+            try:
+                role = getattr(msg, 'role', msg.get('role', 'unknown')) if hasattr(msg, 'role') or isinstance(msg, dict) else 'unknown'
+                content = getattr(msg, 'content', msg.get('content', str(msg))) if hasattr(msg, 'content') or isinstance(msg, dict) else str(msg)
+                
+                # Truncate very long messages
+                if len(content) > 200:
+                    content = content[:200] + "..."
+                    
+                context_lines.append(f"{role.capitalize()}: {content}")
+                
+            except Exception as e:
+                logger.debug(f"Failed to process message in context: {e}")
+                continue
+        
+        return "\n".join(context_lines)
 
     async def _generate_missing_param_question(self, original_prompt: str, conversation_context: str) -> str:
         """Generate AI-powered question for missing parameters"""
@@ -894,443 +987,582 @@ Please generate a natural question to ask the user for the missing information."
             logger.error(f"❌ Failed to initialize agent: {e}")
             raise
 
-    async def handle_user_request(self, user_input: str, user_token: Optional[str] = None, user_id: Optional[str] = None) -> str:
+    async def handle_user_request(self, user_input: str, user_token: Optional[str] = None, user_id: Optional[str] = None) -> Dict[str, Any]:
         """
-        Enhanced method to automatically detect intent, extract parameters, and route requests
+        Enhanced method using LLM to analyze requests with conversation context, handle pagination, and return structured data
         """
         logger.info(f"🎯 Processing user request: '{user_input}'")
         logger.debug(f"User token provided: {'Yes' if user_token else 'No'}")
         logger.debug(f"User ID provided: {user_id}")
         
+        # Initialize response structure
+        response_data = {
+            "response": "",
+            "success": False,
+            "error": None,
+            "data": None,
+            "pagination": None,
+            "requires_input": False
+        }
+        
         # Extract user_id from token if not provided
         if not user_id and user_token:
-            user_id = extract_user_id_from_token(user_token)
+            try:
+                user_id = extract_user_id_from_token(user_token)
+                logger.debug(f"Extracted user_id from token: {user_id}")
+            except Exception as e:
+                logger.warning(f"Failed to extract user_id from token: {e}")
         
         try:
-            # Step 1: Detect intent
-            logger.info("📍 Step 1: Detecting user intent")
-            intent = self.intent_detector.detect_intent(user_input)
-            logger.info(f" Intent detected: {intent}")
+            # Step 1: Retrieve complete conversation history from database
+            logger.info("💾 Step 1: Retrieving complete conversation history from database")
+            conversation_messages = []
+            conversation_data = None
             
-            logger.info(f"✅ Intent detected: '{intent.tool_name}' (confidence: {intent.confidence:.2f})")
+            if user_id:
+                try:
+                    # Get comprehensive conversation history
+                    conversation_data = await chat_service.get_conversation_history(user_id, limit=50)
+                    conversation_messages = conversation_data.messages if hasattr(conversation_data, 'messages') else []
+                    logger.info(f"✅ Retrieved {len(conversation_messages)} previous messages for user {user_id}")
+                    
+                    # Log conversation stats
+                    if conversation_data:
+                        total_messages = getattr(conversation_data, 'total_messages', len(conversation_messages))
+                        logger.debug(f"Total conversation messages: {total_messages}")
+                        
+                except Exception as e:
+                    logger.error(f"❌ Failed to retrieve conversation history: {e}")
+                    response_data["error"] = f"Database error: {str(e)}"
+                    return response_data
+            else:
+                logger.info("ℹ️ No user_id available, proceeding without conversation history")
             
-            # Step 2: Check authentication
-            logger.info("🔐 Step 2: Checking authentication requirements")
-            if intent.requires_auth and not user_token:
-                logger.warning(f"❌ Authentication required for '{intent.tool_name}' but no token provided")
-                return ("You need to be logged in to do that. Please login first with your phone number and password.")
-            elif intent.requires_auth:
+            # Build comprehensive conversation context
+            conversation_context = self._build_conversation_context(conversation_messages)
+            logger.debug(f"Built conversation context with {len(conversation_context)} characters")
+            
+            # Step 2: Advanced LLM analysis with error handling
+            logger.info("🤖 Step 2: Using LLM to analyze request and determine requirements")
+            try:
+                llm_analysis = await self._analyze_request_with_llm(user_input, conversation_context)
+                logger.info(f"✅ LLM Analysis completed: Intent={llm_analysis.get('intent')}, Confidence={llm_analysis.get('confidence')}")
+            except Exception as e:
+                logger.error(f"❌ LLM analysis failed: {e}")
+                response_data.update({
+                    "response": "I'm having trouble understanding your request. Could you please rephrase it?",
+                    "error": f"LLM analysis error: {str(e)}"
+                })
+                return response_data
+            
+            # Step 3: Authentication validation with detailed logging
+            logger.info("🔐 Step 3: Checking authentication requirements")
+            requires_auth = llm_analysis.get('requires_auth', False)
+            
+            if requires_auth and not user_token:
+                logger.warning(f"❌ Authentication required for '{llm_analysis.get('intent')}' but no token provided")
+                response_data.update({
+                    "response": "You need to be logged in to perform this action. Please login first with your email and password.",
+                    "error": "Authentication required",
+                    "requires_input": True
+                })
+                return response_data
+            elif requires_auth:
                 logger.info("✅ Authentication check passed")
             else:
-                logger.info("ℹ️ No authentication required")
+                logger.info("ℹ️ No authentication required for this request")
             
-            # # Step 3: Resolve product references if needed
-            logger.info("🔍 Step 3: Resolving product references")
-            resolved_params = await self.product_resolver.resolve_product_references(
-                intent.extracted_params, 
-                user_token
-            )
-            if 'error' in resolved_params:
-                logger.error(f"❌ Product resolution failed: {resolved_params['error']}")
-                return resolved_params['error']
+            # Step 4: Handle missing information with user interaction
+            logger.info("📋 Step 4: Checking for missing information and parameters")
+            missing_info = llm_analysis.get('missing_info', [])
             
-            logger.info("✅ Product reference resolution completed")
+            if missing_info:
+                logger.info(f"❌ Missing information detected: {missing_info}")
+                
+                # Save user message first
+                if user_id:
+                    try:
+                        await self._save_user_message(user_id, user_input)
+                    except Exception as e:
+                        logger.warning(f"Failed to save user message: {e}")
+                
+                # Generate clarification question
+                try:
+                    question = await self._generate_clarification_question(
+                        user_input, 
+                        missing_info,
+                        conversation_context,
+                        llm_analysis.get('intent', 'unknown')
+                    )
+                    
+                    # Save assistant question
+                    if user_id and question:
+                        try:
+                            await self._save_assistant_message(user_id, question)
+                        except Exception as e:
+                            logger.warning(f"Failed to save assistant question: {e}")
+                    
+                    response_data.update({
+                        "response": question,
+                        "success": True,
+                        "requires_input": True,
+                        "data": {
+                            "missing_parameters": missing_info,
+                            "intent": llm_analysis.get('intent'),
+                            "context": "clarification_needed"
+                        }
+                    })
+                    return response_data
+                    
+                except Exception as e:
+                    logger.error(f"❌ Failed to generate clarification question: {e}")
+                    response_data.update({
+                        "response": f"I need more information about: {', '.join(missing_info)}. Could you please provide these details?",
+                        "error": f"Question generation error: {str(e)}",
+                        "requires_input": True
+                    })
+                    return response_data
             
-            # Step 4: Validate parameters
-            logger.info(f"🔍 Step 4: Validating parameters resolved params {resolved_params}")
-            validated_params = self.parameter_validator.validate_tool_parameters(
-                intent.tool_name, 
-                resolved_params
-            )
+            # Step 5: Execute request with comprehensive data retrieval and pagination
+            logger.info("✅ Step 5: All information available, executing request with data retrieval")
             
-            # Step 5: Checking for missing required parameters
-            logger.info("📋 Step 5: Checking for missing required parameters")
-            user_id = extract_user_id_from_token(user_token) if user_token else None
-            
-            max_attempts = 3  # Prevent infinite loops
-            attempts = 0
-            logger.debug(f"Initial validated parameters:  attempts: {attempts} max_attempts: {max_attempts}")
-            while attempts < max_attempts:
-                logger.debug(f"Attempt {attempts + 1} to check for missing parameters")
-                missing_params = self.parameter_validator.get_missing_parameters(
-                    intent.tool_name, 
-                    validated_params
-                )
+            try:
+                # Determine if this is a data retrieval request that needs pagination
+                intent = llm_analysis.get('intent', 'unknown')
+                is_data_request = intent in ['get_products', 'search_products', 'get_orders', 'get_cart']
                 
-                if not missing_params:
-                    logger.info("✅ All required parameters are present")
-                    break
+                if is_data_request:
+                    logger.info(f"📊 Executing data retrieval request: {intent}")
+                    result = await self._execute_data_request(
+                        user_input, 
+                        conversation_messages, 
+                        user_token, 
+                        user_id,
+                        llm_analysis
+                    )
+                else:
+                    logger.info(f"⚡ Executing action request: {intent}")
+                    result = await self._execute_action_request(
+                        user_input, 
+                        conversation_messages, 
+                        user_token, 
+                        user_id,
+                        llm_analysis
+                    )
                 
-                attempts += 1
-                logger.info(f"❌ Missing parameters (attempt {attempts}/{max_attempts}): {missing_params}")
+                # Process and structure the result
+                if isinstance(result, dict):
+                    response_data.update({
+                        "response": result.get('response', 'Request processed successfully'),
+                        "success": result.get('success', True),
+                        "error": result.get('error'),
+                        "data": result.get('data'),
+                        "pagination": result.get('pagination')
+                    })
+                else:
+                    response_data.update({
+                        "response": str(result),
+                        "success": True
+                    })
                 
-                # Generate missing parameters message
-                missing_msg = self.parameter_validator.format_missing_params_message(
-                    intent.tool_name, 
-                    missing_params
-                )
+                # Save conversation messages
+                if user_id:
+                    try:
+                        await self._save_conversation_messages(
+                            user_id, 
+                            user_input, 
+                            response_data["response"]
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to save conversation: {e}")
                 
-                # Use AI to generate a better question and save it
-                prompt_result = await self.send_prompt_to_user(
-                    missing_msg, 
-                    user_id=user_id, 
-                    user_token=user_token
-                )
+                logger.info("✅ Request processed successfully")
+                return response_data
                 
-                # In a real implementation, you would wait for user input here
-                # For now, we'll break the loop and return the AI-generated question
-                if prompt_result.get("requires_user_input"):
-                    ai_question = prompt_result.get("question", missing_msg)
-                    return f"I need more information to help you:\n\n{ai_question}"
-            
-            if attempts >= max_attempts:
-                logger.warning(f"❌ Max attempts reached for missing parameters: {missing_params}")
-                return "I'm having trouble getting all the information I need. Please try rephrasing your request with more details."
-        
-                
+            except Exception as e:
+                logger.error(f"❌ Request execution failed: {e}")
+                response_data.update({
+                    "response": "I encountered an error while processing your request. Please try again or contact support if the issue persists.",
+                    "error": f"Execution error: {str(e)}"
+                })
+                return response_data
                 
         except Exception as e:
             logger.error(f"❌ Unexpected error in handle_user_request: {e}")
-            return f"I apologize, but I encountered an error: {str(e)}"
-
-    async def get_available_tools(self) -> List[Dict[str, str]]:
-        """Get list of available tools"""
-        logger.info("📋 Getting available tools")
-        tools = [
-            {
-                "name": tool.name,
-                "description": tool.description
-            }
-            for tool in self.tools
-        ]
-        logger.info(f"✅ Retrieved {len(tools)} available tools")
-        return tools
-    
-    async def call_tool_directly(self, tool_name: str, arguments: Dict[str, Any], user_token: Optional[str] = None) -> str:
-        """Call a tool directly without going through the agent"""
-        logger.info(f"🔧 Direct tool call: '{tool_name}' with arguments: {arguments}")
-        
-        try:
-            response = await self.mcp_client.call_tool(tool_name, arguments, user_token)
-            
-            if response.success:
-                logger.info(f"✅ Direct tool call successful: '{tool_name}'")
-                return json.dumps(response.data, indent=2)
-            else:
-                logger.error(f"❌ Direct tool call failed: '{tool_name}' - {response.error}")
-                return f"Error: {response.error}"
-                
-        except Exception as e:
-            logger.error(f"❌ Exception in direct tool call '{tool_name}': {e}")
-            return f"Error: {str(e)}"
-    
-    async def shutdown(self):
-        """Shutdown the agent and MCP client"""
-        logger.info("🔄 Shutting down agent")
-        try:
-            await self.mcp_client.stop()
-            logger.info("✅ Agent shutdown completed successfully")
-        except Exception as e:
-            logger.error(f"❌ Error during agent shutdown: {e}")
-
-    async def _create_agent(self):
-        """Create the LangChain agent"""
-        logger.info("🤖 Creating LangChain agent")
-        
-        # Create system prompt
-        system_prompt = """You are an AI assistant for an e-commerce platform. You can help users with various e-commerce operations.
-
-CORE PRINCIPLES FOR ALL ACTIONS:
-
-1. **Data Presentation**: For ALL read operations (getting, searching, viewing, listing data), always present the data in clean JSON format wrapped in ```json``` code blocks. The tools return structured JSON data - present this data clearly and concisely in the JSON format. Format your response as: "Here's the data you requested:" followed by the JSON block.
-
-2. **Parameter Handling**: For ALL actions that require parameters:
-   - If required parameters are missing, ask the user for them clearly and wait for their response
-   - Extract available information from the user's message first
-   - If you can infer missing parameters from context, do so intelligently
-   - Always validate that you have all required parameters before executing an action
-   - For product IDs: Look for patterns like "68c5fff6fb9060f2b15b6944" or "product 68c5fff6fb9060f2b15b6944"
-   - For product names: Extract the product name from phrases like "details of this product [name]" or "show me [product name]"
-   - For cart operations: Use the most recently discussed product ID from conversation history
-   - CRITICAL: When user says "give me the details of this product 68c5fff6fb9060f2b15b6944", you MUST extract the ID "68c5fff6fb9060f2b15b6944" and pass it as {{"id": "68c5fff6fb9060f2b15b6944"}} to the get_product tool
-
-3. **Error Handling**: For ALL tool executions:
-   - If a tool execution fails, provide a clear error message to the user
-   - Suggest alternative actions or ask for clarification
-   - Never leave the user without feedback
-
-4. **User Experience**: For ALL interactions:
-   - Be conversational and helpful
-   - Provide clear feedback on successful operations
-   - Ask for clarification when needed
-   - Guide users through multi-step processes
-
-5. **Authentication**: For ALL actions that require user context:
-   - Use the provided user token when available
-   - Handle authentication errors gracefully
-   - Guide users to authenticate when needed
-
-6. **CONTEXTUAL UNDERSTANDING** (CRITICAL):
-   - ALWAYS maintain conversation context and remember what the user is referring to
-   - When user uses pronouns like "it", "this", "that", "the first one" - understand what they're referring to from the conversation history
-   - When user says "give me more", "show me more", "next", "continue" - understand what they want more of based on the previous conversation
-   - For "give me more products" - look at the last product list in conversation history and increment the page number
-   - When user says "add it to cart" - use the most recently discussed product
-   - When user asks "how many?" - understand they're asking about quantity for the current action
-   - When user says "remove the first item" - understand they mean the first item in their cart
-   - Keep track of the last action performed and continue from there
-   - If context is unclear, ask specific clarifying questions rather than generic ones
-   - Use the conversation history to understand references and maintain context
-
-7. **PAGINATION HANDLING** (CRITICAL):
-   - When user asks for "more products", "next page", "show more", "continue" after a product list - automatically increment the page number
-   - Look at the conversation history to find the last product list response
-   - Extract the page number from the previous response (it should be in the data object)
-   - If the previous response showed page 1, use page 2. If page 2, use page 3, etc.
-   - Always use the same limit (number of products per page) as the previous request
-   - If no previous pagination context exists, start with page 1
-   - When showing paginated results, always include the current page number in your response
-   - If you reach the last page, inform the user that there are no more products
-   - Example: If previous response had {{"page": 1, "limit": 10}}, then next request should use {{"page": 2, "limit": 10}}
-
-AVAILABLE TOOL CATEGORIES:
-- Authentication: User login, registration, logout, token refresh
-- Products: Browse, search, view products and categories
-- Cart: Manage shopping cart items
-- Orders: Create, view, track, and manage orders
-- User: Profile and address management
-
-EXAMPLES OF PARAMETER EXTRACTION:
-- User: "give me the details of this product 68c5fff6fb9060f2b15b6944" → Use get_product with {{"id": "68c5fff6fb9060f2b15b6944"}}
-- User: "show me more products" → Use get_products with {{"page": 2}} (if previous was page 1)
-- User: "add it to cart" → Use add_to_cart with the most recent product ID from conversation history
-- User: "search for laptops" → Use search_products with {{"query": "laptops"}}
-
-Remember: Apply these principles to ALL actions, not just specific ones. Use the available tools dynamically based on user intent, and always follow the core principles above. MOST IMPORTANTLY: Maintain conversation context and understand what the user is referring to."""
-
-        # Create prompt template
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            MessagesPlaceholder("chat_history"),
-            ("human", "{input}"),
-            MessagesPlaceholder("agent_scratchpad")
-        ])
-        
-        # Create agent
-        agent = create_openai_tools_agent(
-            llm=self.llm,
-            tools=self.tools,
-            prompt=prompt
-        )
-        
-        # Create agent executor
-        self.agent_executor = AgentExecutor(
-            agent=agent,
-            tools=self.tools,
-            verbose=True,
-            handle_parsing_errors=True,
-            max_iterations=5
-        )
-    
-
-    async def chat(self, message: str, chat_history: List[Dict[str, str]] = None, user_token: Optional[str] = None) -> Dict[str, Any]:
-        """Process a chat message with optional user authentication"""
-        try:
-            if not self.agent_executor:
-                raise RuntimeError("Agent not initialized")
-            
-            # Set the user token for the MCP client if provided
-            if user_token:
-                self.set_user_token(user_token)
-            
-            
-            # Convert chat history to LangChain messages
-            messages = []
-            if chat_history:
-                for msg in chat_history:
-                    # Ensure the message has the required fields
-                    if not isinstance(msg, dict):
-                        continue
-                    
-                    # Check if the message has the required 'role' field
-                    if "role" not in msg:
-                        logger.warning(f"Chat history message missing 'role' field: {msg}")
-                        continue
-                    
-                    # Check if the message has content
-                    content = msg.get("content", msg.get("message", ""))
-                    if not content:
-                        logger.warning(f"Chat history message missing content: {msg}")
-                        continue
-                    
-                    if msg["role"] == "user":
-                        messages.append(HumanMessage(content=content))
-                    elif msg["role"] == "assistant":
-                        messages.append(AIMessage(content=content))
-                    else:
-                        logger.warning(f"Unknown role in chat history: {msg['role']}")
-            
-            result = await self.agent_executor.ainvoke({
-                "input": message,
-                "chat_history": messages
+            response_data.update({
+                "response": "I apologize, but I encountered an unexpected error. Please try again later.",
+                "error": f"System error: {str(e)}"
             })
+            return response_data
+
+    async def _execute_data_request(self, user_input: str, conversation_messages: List, 
+                                  user_token: str, user_id: str, llm_analysis: Dict) -> Dict[str, Any]:
+        """Execute data retrieval requests with pagination support"""
+        try:
+            intent = llm_analysis.get('intent', 'unknown')
+            logger.info(f"📊 Executing data request: {intent}")
             
-            response_text = result["output"]
-            json_data = None
+            # Check if agent is properly initialized
+            if not self.agent_executor:
+                logger.error("❌ Agent executor not initialized - calling initialize()")
+                await self.initialize()
             
-            try:
-                import re
-                json_pattern = r'```json\s*(\{.*?\})\s*```'
-                json_match = re.search(json_pattern, response_text, re.DOTALL)
-                
-                if json_match:
-                    json_data = json.loads(json_match.group(1))
-                    response_text = re.sub(json_pattern, '', response_text, flags=re.DOTALL).strip()
-            except (json.JSONDecodeError, AttributeError):
-                try:
-                    json_data = json.loads(response_text)
-                    response_text = "Data retrieved successfully"
-                except json.JSONDecodeError:
-                    pass
+            # Extract pagination parameters from conversation context
+            pagination_context = self._extract_pagination_context(conversation_messages)
+            
+            # Convert conversation to chat history format
+            chat_history = self._convert_messages_to_chat_history(conversation_messages)
+            
+            # Execute the chat method to get data
+            chat_result = await self.chat(user_input, chat_history, user_token)
+            
+            if not chat_result.get('success', True):
+                return {
+                    "response": chat_result.get('response', 'Data retrieval failed'),
+                    "success": False,
+                    "error": chat_result.get('error')
+                }
+            
+            # Process response for pagination
+            response_text = chat_result.get('response', '')
+            json_data = chat_result.get('data')
+            
+            # Extract pagination info if available
+            pagination_info = None
+            if json_data and isinstance(json_data, dict):
+                if 'pagination' in json_data:
+                    pagination_info = json_data['pagination']
+                elif any(key in json_data for key in ['page', 'total_pages', 'total_items', 'has_more']):
+                    pagination_info = {
+                        'current_page': json_data.get('page', 1),
+                        'total_pages': json_data.get('total_pages'),
+                        'total_items': json_data.get('total_items'),
+                        'has_more': json_data.get('has_more', False),
+                        'items_per_page': json_data.get('limit', json_data.get('per_page', 10))
+                    }
             
             return {
                 "response": response_text,
                 "success": True,
-                "error": None,
-                "data": json_data
+                "data": json_data,
+                "pagination": pagination_info,
+                "context": {
+                    "intent": intent,
+                    "data_type": self._get_data_type_from_intent(intent)
+                }
             }
             
         except Exception as e:
-            logger.error(f"Error processing chat message: {e}")
+            logger.error(f"❌ Data request execution failed: {e}")
             return {
-                "response": f"I apologize, but I encountered an error: {str(e)}",
+                "response": "Failed to retrieve data. Please try again.",
+                "success": False,
+                "error": str(e)
+            }
+
+    async def _execute_action_request(self, user_input: str, conversation_messages: List,
+                                    user_token: str, user_id: str, llm_analysis: Dict) -> Dict[str, Any]:
+        """Execute action requests (non-data retrieval)"""
+        try:
+            intent = llm_analysis.get('intent', 'unknown')
+            logger.info(f"⚡ Executing action request: {intent}")
+            
+            # Check if agent is properly initialized
+            if not self.agent_executor:
+                logger.error("❌ Agent executor not initialized - calling initialize()")
+                await self.initialize()
+            
+            # Convert conversation to chat history format
+            chat_history = self._convert_messages_to_chat_history(conversation_messages)
+            
+            # Execute the chat method
+            result = await self.chat(user_input, chat_history, user_token)
+            
+            return {
+                "response": result.get('response', 'Action completed'),
+                "success": result.get('success', True),
+                "error": result.get('error'),
+                "data": result.get('data'),
+                "context": {
+                    "intent": intent,
+                    "action_type": "modification"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Action request execution failed: {e}")
+            return {
+                "response": "Failed to execute action. Please try again.",
+                "success": False,
+                "error": str(e)
+            }
+
+    def _extract_pagination_context(self, conversation_messages: List) -> Dict[str, Any]:
+        """Extract pagination context from conversation history"""
+        pagination_context = {
+            "last_page": 1,
+            "last_limit": 10,
+            "last_query": None,
+            "last_action": None
+        }
+        
+        try:
+            # Look through recent messages for pagination info
+            for msg in reversed(conversation_messages[-10:]):  # Last 10 messages
+                content = getattr(msg, 'content', '') if hasattr(msg, 'content') else msg.get('content', '')
+                
+                # Look for JSON data in assistant messages
+                if getattr(msg, 'role', '') == 'assistant' or msg.get('role') == 'assistant':
+                    if 'page' in content.lower() and ('products' in content.lower() or 'items' in content.lower()):
+                        # Try to extract page info from the message
+                        import re
+                        page_match = re.search(r'"page":\s*(\d+)', content)
+                        limit_match = re.search(r'"limit":\s*(\d+)', content)
+                        
+                        if page_match:
+                            pagination_context["last_page"] = int(page_match.group(1))
+                        if limit_match:
+                            pagination_context["last_limit"] = int(limit_match.group(1))
+                        
+                        break
+                        
+        except Exception as e:
+            logger.debug(f"Failed to extract pagination context: {e}")
+        
+        return pagination_context
+
+    def _convert_messages_to_chat_history(self, conversation_messages: List) -> List[Dict[str, str]]:
+        """Convert conversation messages to chat history format"""
+        chat_history = []
+        
+        for msg in conversation_messages:
+            try:
+                if hasattr(msg, 'role') and hasattr(msg, 'content'):
+                    chat_history.append({
+                        "role": msg.role,
+                        "content": msg.content
+                    })
+                elif isinstance(msg, dict):
+                    role = msg.get('role', '')
+                    content = msg.get('content', msg.get('message', ''))
+                    if role and content:
+                        chat_history.append({
+                            "role": role,
+                            "content": content
+                        })
+            except Exception as e:
+                logger.debug(f"Failed to convert message: {e}")
+                continue
+        
+        return chat_history
+
+    def _get_data_type_from_intent(self, intent: str) -> str:
+        """Get data type based on intent"""
+        data_type_mapping = {
+            'get_products': 'products',
+            'search_products': 'products', 
+            'get_cart': 'cart',
+            'get_orders': 'orders',
+            'get_categories': 'categories'
+        }
+        return data_type_mapping.get(intent, 'data')
+
+    async def _save_user_message(self, user_id: str, content: str):
+        """Save user message to conversation"""
+        user_message = Message(
+            role="user",
+            content=content,
+            timestamp=time.time()
+        )
+        await conversation_repo.add_message(user_id, user_message)
+        logger.debug(f"Saved user message to conversation for user {user_id}")
+
+    async def _save_assistant_message(self, user_id: str, content: str):
+        """Save assistant message to conversation"""
+        assistant_message = Message(
+            role="assistant",
+            content=content,
+            timestamp=time.time()
+        )
+        await conversation_repo.add_message(user_id, assistant_message)
+        logger.debug(f"Saved assistant message to conversation for user {user_id}")
+
+    async def _save_conversation_messages(self, user_id: str, user_input: str, assistant_response: str):
+        """Save both user and assistant messages to conversation"""
+        try:
+            await self._save_user_message(user_id, user_input)
+            await self._save_assistant_message(user_id, assistant_response)
+        except Exception as e:
+            logger.warning(f"Failed to save conversation messages: {e}")
+            raise
+
+    async def _generate_clarification_question(self, user_input: str, missing_info: List[str], 
+                                             conversation_context: str, intent: str) -> str:
+        """Generate a natural clarification question for missing information"""
+        try:
+            clarification_prompt = f"""
+            Generate a helpful, natural clarification question to ask the user for missing information.
+            
+            User's original request: "{user_input}"
+            Detected intent: {intent}
+            Missing information: {missing_info}
+            
+            Conversation context:
+            {conversation_context}
+            
+            Create a friendly, specific question that asks for the missing information in a natural way.
+            Be conversational and helpful, not robotic.
+            
+            Examples:
+            - If missing "query" for search: "What products are you looking for? Please describe what you'd like to find."
+            - If missing "productId" for cart: "Which product would you like to add to your cart? You can provide the product name or ID."
+            - If missing "quantity": "How many would you like to add to your cart?"
+            
+            Respond with just the question, no extra formatting or quotes.
+            """
+            
+            llm_response = await self.llm.ainvoke(clarification_prompt)
+            question = llm_response.content.strip()
+            
+            # Clean up the response
+            question = question.strip('"').strip("'")
+            if not question.endswith(('?', '.', '!')):
+                question += "?"
+                
+            return question
+            
+        except Exception as e:
+            logger.error(f"Failed to generate clarification question: {e}")
+            # Fallback question
+            return f"I need more information about: {', '.join(missing_info)}. Could you please provide these details?"
+    
+    async def _create_agent(self):
+        """Create the LangChain agent with tools"""
+        try:
+            logger.info("🔧 Creating LangChain agent with tools")
+            
+            # Create the system prompt for the agent
+            system_prompt = """You are a helpful e-commerce assistant that can help users:
+            
+            1. Browse and search products
+            2. Get detailed product information
+            3. Manage shopping cart (add, remove, update items)
+            4. View cart contents
+            5. Provide general assistance
+            
+            When users ask for products, use the appropriate tools to search or get product information.
+            When users want to manage their cart, use the cart-related tools.
+            Always be helpful, friendly, and provide clear information.
+            
+            If you need user authentication for cart operations, let them know they need to log in first.
+            When displaying product information, include relevant details like name, price, description, and availability.
+            
+            Use the available tools to fulfill user requests and provide accurate, up-to-date information."""
+
+            # Create the prompt template
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", system_prompt),
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", "{input}"),
+                MessagesPlaceholder(variable_name="agent_scratchpad")
+            ])
+
+            # Create the OpenAI tools agent
+            agent = create_openai_tools_agent(
+                llm=self.llm,
+                tools=self.tools,
+                prompt=prompt
+            )
+
+            # Create the agent executor
+            self.agent_executor = AgentExecutor(
+                agent=agent,
+                tools=self.tools,
+                verbose=True,
+                return_intermediate_steps=True,
+                max_iterations=10,
+                max_execution_time=60
+            )
+
+            logger.info(f"✅ Agent created with {len(self.tools)} tools")
+
+        except Exception as e:
+            logger.error(f"Failed to create agent: {e}")
+            raise
+
+    async def chat(self, user_input: str, chat_history: List[Dict[str, str]] = None, user_token: str = None) -> Dict[str, Any]:
+        """
+        Process user input using the LangChain agent and return structured response
+        """
+        try:
+            logger.info(f"💬 Processing chat request: '{user_input[:100]}...'")
+            
+            # Check if agent is properly initialized
+            if not self.agent_executor:
+                logger.error("❌ Agent executor not initialized - attempting to initialize")
+                await self.initialize()
+                
+                # If still not initialized after attempt, return error
+                if not self.agent_executor:
+                    return {
+                        "response": "I'm currently unavailable. Please try again in a moment.",
+                        "success": False,
+                        "error": "Agent executor not initialized",
+                        "data": None
+                    }
+            
+            # Set user token for MCP client
+            if user_token:
+                self.mcp_client.user_token = user_token
+                logger.debug("Set user token on MCP client")
+
+            # Convert chat history to LangChain format
+            langchain_history = []
+            if chat_history:
+                for msg in chat_history:
+                    role = msg.get('role', '')
+                    content = msg.get('content', '')
+                    if role == 'user':
+                        langchain_history.append(HumanMessage(content=content))
+                    elif role == 'assistant':
+                        langchain_history.append(AIMessage(content=content))
+
+            # Execute the agent
+            logger.debug("🤖 Executing LangChain agent")
+            result = await self.agent_executor.ainvoke({
+                "input": user_input,
+                "chat_history": langchain_history
+            })
+
+            # Process the result
+            response_text = result.get('output', 'No response generated')
+            
+            # Try to extract structured data from the response
+            structured_data = None
+            try:
+                # Look for JSON in the response
+                import json
+                import re
+                json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+                if json_match:
+                    structured_data = json.loads(json_match.group())
+            except:
+                pass
+
+            logger.info("✅ Chat request processed successfully")
+            
+            return {
+                "response": response_text,
+                "success": True,
+                "data": structured_data,
+                "intermediate_steps": result.get('intermediate_steps', [])
+            }
+
+        except Exception as e:
+            logger.error(f"❌ Chat processing failed: {e}")
+            return {
+                "response": f"I encountered an error processing your request: {str(e)}",
                 "success": False,
                 "error": str(e),
                 "data": None
             }
-    
-    async def get_available_tools(self) -> List[Dict[str, str]]:
-        """Get list of available tools"""
-        return [
-            {
-                "name": tool.name,
-                "description": tool.description
-            }
-            for tool in self.tools
-        ]
-    
-    async def call_tool_directly(self, tool_name: str, arguments: Dict[str, Any], user_token: Optional[str] = None) -> str:
-        """Call a tool directly without going through the agent"""
-        try:
-            response = await self.mcp_client.call_tool(tool_name, arguments, user_token)
-            
-            if response.success:
-                return json.dumps(response.data, indent=2)
-            else:
-                return f"Error: {response.error}"
-                
-        except Exception as e:
-            logger.error(f"Error calling tool {tool_name}: {e}")
-            return f"Error: {str(e)}"
-    
-    async def shutdown(self):
-        """Shutdown the agent and MCP client"""
-        try:
-            await self.mcp_client.stop()
-            logger.info("Agent shutdown complete")
-        except Exception as e:
-            logger.error(f"Error during shutdown: {e}")
-
-# Example usage and testing
-async def main():
-    """Example usage of the enhanced EcommerceAgent"""
-    import os
-    from dotenv import load_dotenv
-    
-    # Load environment variables
-    load_dotenv()
-    
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    
-    # Get Azure OpenAI configuration
-    azure_config = {
-        "api_key": os.getenv("AZURE_OPENAI_API_KEY"),
-        "endpoint": os.getenv("AZURE_OPENAI_ENDPOINT"),
-        "deployment_name": os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o"),
-        "api_version": os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
-    }
-    
-    mcp_server_url = os.getenv("MCP_SERVER_URL", "http://mcp-server:3002")
-    
-    if not azure_config["api_key"] or not azure_config["endpoint"]:
-        print("Please set AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT in your environment variables")
-        return
-    
-    # Create HTTP MCP client
-    mcp_client = HTTPMCPClient(mcp_server_url)
-    
-    # Create agent
-    agent = EcommerceAgent(mcp_client, azure_config)
-    
-    try:
-        # Initialize agent
-        await agent.initialize()
-        
-        # Example conversation with enhanced intent detection
-        print("🎉 Enhanced E-commerce Agent initialized! Type 'quit' to exit.")
-        print("Try commands like:")
-        print("- 'show me products'")
-        print("- 'add shoes to cart'") 
-        print("- 'login with phone +1234567890'")
-        print("- 'place an order'")
-        
-        user_token = None  # Will be set after login
-        chat_history = []  # Initialize chat history
-        
-        while True:
-            user_input = input("\nYou: ")
-            if user_input.lower() in ['quit', 'exit', 'bye']:
-                break
-            
-            response = await agent.chat(user_input, chat_history)
-            # Use the enhanced handle_user_request method
-            response = await agent.handle_user_request(user_input, user_token)
-            
-            # Handle structured response
-            if isinstance(response, dict):
-                print(f"\nAgent: {response['response']}")
-                if response.get('data'):
-                    print(f"\nData: {json.dumps(response['data'], indent=2)}")
-                if response.get('error'):
-                    print(f"\nError: {response['error']}")
-            else:
-                print(f"\nAgent: {response}")
-            
-            # If login was successful, extract token (simplified for demo)
-            if "logged in" in response.lower() and user_token is None:
-                # In a real app, you'd extract the actual token from the response['response'] if isinstance(response, dict) else response
-                user_token = "sample_token_after_login"
-                print("(Token saved for authenticated requests)")
-                print(f"\nAgent: {response}")
-            
-            # Update chat history
-            chat_history.append({"role": "user", "content": user_input})
-            chat_history.append({"role": "assistant", "content": response['response'] if isinstance(response, dict) else response})
-            
-            # Keep only last 10 messages
-            if len(chat_history) > 20:
-                chat_history = chat_history[-20:]
-    
-    except KeyboardInterrupt:
-        print("\nShutting down...")
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        await agent.shutdown()
-
-if __name__ == "__main__":
-    asyncio.run(main())

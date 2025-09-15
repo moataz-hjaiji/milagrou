@@ -30,6 +30,8 @@ class ChatResponse(BaseModel):
     success: bool
     error: Optional[str] = None
     data: Optional[Dict[str, Any]] = None
+    pagination: Optional[Dict[str, Any]] = None
+    requires_input: Optional[bool] = False
     user: Optional[Dict[str, Any]] = None
 
 class AuthenticatedChatMessage(BaseModel):
@@ -187,6 +189,7 @@ async def chat(request: ChatMessage, user_data: Dict[str, Any] = Depends(get_use
     try:
         current_user = user_data["user"]
         user_token = user_data["token"]
+        user_id = current_user.get("email")  # Use email as user_id
         
         # Add authenticated user context to the message
         user_roles = current_user.get('roles', [])
@@ -195,25 +198,24 @@ async def chat(request: ChatMessage, user_data: Dict[str, Any] = Depends(get_use
         user_context = f"[Authenticated User: {user_name} ({user_email}) - Roles: {', '.join(user_roles)}] "
         enhanced_message = user_context + request.message
         
-        # Pass the user token to the agent so it can forward it to MCP server
-        agent_response = await agent.chat(enhanced_message, request.chat_history, user_token=user_token)
+        # Use the new handle_user_request method to get the enhanced LLM-powered processing
+        agent_response = await agent.handle_user_request(
+            user_input=enhanced_message, 
+            user_token=user_token, 
+            user_id=user_id
+        )
         
-        # Handle structured response from agent
-        if isinstance(agent_response, dict):
-            return ChatResponse(
-                response=agent_response.get("response", ""),
-                success=agent_response.get("success", True),
-                error=agent_response.get("error"),
-                data=agent_response.get("data"),
-                user=current_user
-            )
-        else:
-            # Fallback for string responses
-            return ChatResponse(
-                response=str(agent_response),
-                success=True,
-                user=current_user
-            )
+        # handle_user_request returns a structured dict, so use its values
+        return ChatResponse(
+            response=agent_response.get("response", "Request processed"),
+            success=agent_response.get("success", True),
+            error=agent_response.get("error"),
+            data=agent_response.get("data"),
+            pagination=agent_response.get("pagination"),
+            requires_input=agent_response.get("requires_input", False),
+            user=current_user
+        )
+        
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
         return ChatResponse(

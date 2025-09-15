@@ -21,6 +21,10 @@ class ChatService:
                 logger.info(f"Creating new conversation for user {user_id}")
                 conversation = await conversation_repo.create_conversation(user_id)
 
+            # Get old conversation history before adding new message
+            old_messages = await conversation_repo.get_messages(user_id)
+            logger.info(f"Retrieved {len(old_messages)} previous messages for user {user_id}")
+
             # Create user message
             user_message = Message(
                 role="user",
