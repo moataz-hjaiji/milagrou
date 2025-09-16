@@ -7,11 +7,11 @@ import time
 import concurrent.futures
 import requests
 import jwt
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, Literal
+from pydantic.v1 import BaseModel, Field  # keep v1
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.tools import BaseTool, StructuredTool
 from langchain_core.tools import tool
-from pydantic.v1 import BaseModel, Field
 from langchain_openai import AzureChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
@@ -73,13 +73,18 @@ def make_sync_http_request(url: str, method: str = "POST", json_data: dict = Non
         logger.error(f"HTTP request error: {e}")
         return {"error": str(e)}
 
-# Define Pydantic models for tool inputs
+# Define Pydantic models for tool inputs (STRICT: forbid extras)
+
 class GetProductInput(BaseModel):
     id: str
+    class Config:
+        extra = 'forbid'
 
 class SearchProductsInput(BaseModel):
     query: str
     limit: Optional[int] = None
+    class Config:
+        extra = 'forbid'
 
 class GetProductsInput(BaseModel):
     page: Optional[int] = None
@@ -87,7 +92,9 @@ class GetProductsInput(BaseModel):
     category: Optional[str] = None
     search: Optional[str] = None
     minPrice: Optional[float] = None
-    maxPrice: Optional[float] = None
+    maxPrice: Optional[float]
+    class Config:
+        extra = 'forbid'
 
 class GetCartInput(BaseModel):
     pass
@@ -252,7 +259,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
                 headers["Authorization"] = f"Bearer {mcp_client.user_token}"
             
             result = make_sync_http_request(url, "POST", payload, headers)
-            
+            logger.info(f"result = {result}")
             if "error" in result:
                 return json.dumps({
                     "response_type": "error",
@@ -278,8 +285,8 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
                     error=None
                 )
             if response.success:
-                structured_response = ResponseMapper.map_tool_response("get_product", response.data)
-                return json.dumps(structured_response.dict(), indent=2)
+                # structured_response = ResponseMapper.map_tool_response("get_product", response.data)
+                return response.data
             else:
                 error_response = create_response(
                     ResponseType.ERROR,
@@ -497,7 +504,7 @@ def create_structured_tools(mcp_client: HTTPMCPClient):
             logger.error(f"Error running get_cart: {e}")
             error_response = create_response(
                 ResponseType.ERROR,
-                success=False,
+                 success=False,
                 message=f"Tool execution error: {str(e)}",
                 error=str(e)
             )
@@ -1099,11 +1106,16 @@ class EcommerceAgent:
 
             # Use the LLM to analyze
             llm_response = await self.llm.ainvoke(analysis_prompt)
-            
+            logger.info(f"LLM response: {llm_response.content}")
+            raw = llm_response.content.strip()
+
+            # Remove markdown code fences like ```json ... ```
+            if raw.startswith("```"):
+                raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.DOTALL).strip()
             # Parse JSON response
             import json
             try:
-                analysis_result = json.loads(llm_response.content)
+                analysis_result = json.loads(raw)
                 logger.debug(f"LLM analysis result: {analysis_result}")
                 return analysis_result
             except json.JSONDecodeError as e:
@@ -1165,22 +1177,22 @@ class EcommerceAgent:
         try:
             system_message = """You are a helpful e-commerce assistant. Based on the conversation context and missing parameter information, generate a natural, friendly question to ask the user for the missing information.
 
-Guidelines:
-- Be conversational and helpful
-- Ask for specific missing information clearly
-- Reference the conversation context if relevant
-- Keep questions concise but complete
-- Use friendly, customer service tone
-- If multiple parameters are missing, ask for the most important one first"""
+            Guidelines:
+            - Be conversational and helpful
+            - Ask for specific missing information clearly
+            - Reference the conversation context if relevant
+            - Keep questions concise but complete
+            - Use friendly, customer service tone
+            - If multiple parameters are missing, ask for the most important one first"""
 
             user_message = f"""
-Conversation Context:
-{conversation_context}
+            Conversation Context:
+            {conversation_context}
 
-Missing Parameter Information:
-{original_prompt}
+            Missing Parameter Information:
+            {original_prompt}
 
-Please generate a natural question to ask the user for the missing information."""
+            Please generate a natural question to ask the user for the missing information."""
 
             messages = [
                 {"role": "system", "content": system_message},
@@ -1473,20 +1485,7 @@ Please generate a natural question to ask the user for the missing information."
             # Process response for pagination
             response_text = chat_result.get('response', '')
             json_data = chat_result.get('data')
-            
-            # Extract pagination info if available
-            pagination_info = None
-            if json_data and isinstance(json_data, dict):
-                if 'pagination' in json_data:
-                    pagination_info = json_data['pagination']
-                elif any(key in json_data for key in ['page', 'total_pages', 'total_items', 'has_more']):
-                    pagination_info = {
-                        'current_page': json_data.get('page', 1),
-                        'total_pages': json_data.get('total_pages'),
-                        'total_items': json_data.get('total_items'),
-                        'has_more': json_data.get('has_more', False),
-                        'items_per_page': json_data.get('limit', json_data.get('per_page', 10))
-                    }
+            # logger.info(f"Raw response text: 0001 {response_text}")
             
             return {
                 "response": response_text,
@@ -1524,7 +1523,7 @@ Please generate a natural question to ask the user for the missing information."
             
             # Execute the chat method
             result = await self.chat(user_input, chat_history, user_token)
-            
+            logger.info(f"Action execution result: 002 {result}")
             return {
                 "response": result.get('response', 'Action completed'),
                 "success": result.get('success', True),
@@ -1687,50 +1686,99 @@ Please generate a natural question to ask the user for the missing information."
         """Create the LangChain agent with tools"""
         try:
             logger.info("🔧 Creating LangChain agent with tools")
-            
+            # response_format = {
+            #     "type": "json_schema",
+            #     "json_schema": {
+            #         "name": "multi_segment_response",
+            #         "strict": True,
+            #         "schema": {
+            #             "type": "array",
+            #             "items": {
+            #                 "type": "object",
+            #                 "properties": {
+            #                     "response_type": { "type": "string", "enum": ["text", "image"] },
+            #                     "response": { "type": "string" }
+            #                 },
+            #                 "required": ["response_type", "response"],
+            #                 "additionalProperties": False
+            #             }
+            #         }
+            #     }
+            # }
             # Create the system prompt for the agent
             system_prompt = """You are a helpful e-commerce assistant that can help users:
             
-            1. Browse and search products
-            2. Get detailed product information
-            3. Manage shopping cart (add, remove, update items)
-            4. View cart contents
-            5. Place and manage orders (create orders, view orders, cancel, track)
-            6. Provide general assistance
-            
-            IMPORTANT PRODUCT RESPONSE REQUIREMENTS:
-            - When users ask for products, ALWAYS use the appropriate tools to search or get product information
-            - For product queries (browsing, searching, or listing products), your response MUST include:
-              1. A clear, user-friendly description of the products found
-              2. The complete product data in a structured format within your response
-              3. Pagination information (current page, total pages, items per page) when applicable
-              4. Clear indication of how many products were found and displayed
-            
-            - When displaying product lists, structure your response like this:
-              "I found X products for you. Here are the results (page Y of Z):
-              
-              [User-friendly product descriptions]
-              
-              Product Data:
-              {{\"products\": [...], \"pagination\": {{\"page\": 1, \"limit\": 10, \"total\": X, \"totalPages\": Y}}}}"
-            
-            - For single product details, include the complete product object in your response
-            - Always mention pagination details when showing product lists
-            - If no products are found, clearly state this and suggest alternatives
-            
-            CART AND AUTH REQUIREMENTS:
-            - When users want to manage their cart, use the cart-related tools
-            - If you need user authentication for cart operations, let them know they need to log in first
-            - Always be helpful, friendly, and provide clear information
-            
-            ORDER OPERATIONS:
-            - To place an order, call the create_order tool. It requires: orderType (GIFT|RESERVATION|NORMAL), InvoicePaymentMethods (array of numbers), and deliveryType (DELIVERY|PICKUP).
-            - If deliveryType is DELIVERY, an addressId is required. If orderType is RESERVATION, reservationDate is required.
-            - If any required info is missing, ask the user for it and list allowed values for enums.
-            - For viewing or tracking orders, use get_orders, get_order, or track_order. To cancel, use cancel_order.
-            
-            Use the available tools to fulfill user requests and provide accurate, up-to-date information.
-            Ensure that product- and order-related responses contain the actual data for frontend consumption when applicable."""
+                1. Browse and search products
+                2. Get detailed product information
+                3. Manage shopping cart (add, remove, update items)
+                4. View cart contents
+                5. Place and manage orders (create orders, view orders, cancel, track)
+                6. Provide general assistance
+
+                IMPORTANT PRODUCT RESPONSE REQUIREMENTS:
+                - When users ask for products, ALWAYS use the appropriate tools to search or get product information
+                - For product queries (browsing, searching, or listing products), your response MUST include:
+                1. A clear, user-friendly description of the products found
+                2. The complete product data in a structured format within your response
+                3. Pagination information (current page, total pages, items per page) when applicable
+                4. Clear indication of how many products were found and displayed
+
+                - When displaying product lists, structure your response like this:
+                "I found X products for you. Here are the results (page Y of Z):
+
+                [User-friendly product descriptions]
+
+                Product Data:
+            {{"products": [...], "pagination": {{ "page": 1, "limit": 10, "total": X, "totalPages": Y }}}}
+
+                - For single product details, include the complete product object in your response
+                - Always mention pagination details when showing product lists
+                - If no products are found, clearly state this and suggest alternatives
+
+                CART AND AUTH REQUIREMENTS:
+                - When users want to manage their cart, use the cart-related tools
+                - If you need user authentication for cart operations, let them know they need to log in first
+                - Always be helpful, friendly, and provide clear information
+
+                ORDER OPERATIONS:
+                - To place an order, call the create_order tool. It requires: orderType (GIFT|RESERVATION|NORMAL), InvoicePaymentMethods (array of numbers), and deliveryType (DELIVERY|PICKUP).
+                - If deliveryType is DELIVERY, an addressId is required. If orderType is RESERVATION, reservationDate is required.
+                - If any required info is missing, ask the user for it and list allowed values for enums.
+                - For viewing or tracking orders, use get_orders, get_order, or track_order. To cancel, use cancel_order.
+
+                Use the available tools to fulfill user requests and provide accurate, up-to-date information.
+                Ensure that product- and order-related responses contain the actual data for frontend consumption when applicable.    
+
+                🚨 RESPONSE FORMAT REQUIREMENT (MANDATORY):
+                All responses MUST strictly follow this JSON Schema format:
+
+                {{
+                    "type": "json_schema",
+                    "json_schema": {{
+                        "name": "multi_segment_response",
+                        "strict": true,
+                        "schema": {{
+                            "type": "array",
+                            "items": {{
+                                "type": "object",
+                                "properties": {{
+                                    "response_type": {{ "type": "string", "enum": ["text", "image"] }},
+                                    "response": {{ "type": "string" }}
+                                }},
+                                "required": ["response_type", "response"],
+                                "additionalProperties": false
+                            }}
+                        }}
+                    }}
+                }}
+
+
+                Rules for using this schema:
+                - If the assistant is responding with text, set `"response_type": "text"` and put the text in `"response"`.
+                - If the assistant is returning an image, set `"response_type": "image"` and put the image URL in `"response"`.
+                - Never output anything outside of this schema.
+
+            """
 
             # Create the prompt template
             prompt = ChatPromptTemplate.from_messages([
@@ -1739,7 +1787,7 @@ Please generate a natural question to ask the user for the missing information."
                 ("human", "{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad")
             ])
-
+            # bound_llm = self.llm.bind(response_format=response_format)
             # Create the OpenAI tools agent
             agent = create_openai_tools_agent(
                 llm=self.llm,
@@ -1791,17 +1839,18 @@ Please generate a natural question to ask the user for the missing information."
 
             # Convert chat history to LangChain format
             langchain_history = []
-            if chat_history:
-                for msg in chat_history:
-                    role = msg.get('role', '')
-                    content = msg.get('content', '')
-                    if role == 'user':
-                        langchain_history.append(HumanMessage(content=content))
-                    elif role == 'assistant':
-                        langchain_history.append(AIMessage(content=content))
+            # if chat_history:
+            #     for msg in chat_history:
+            #         role = msg.get('role', '')
+            #         content = msg.get('content', '')
+            #         if role == 'user':
+            #             langchain_history.append(HumanMessage(content=content))
+            #         elif role == 'assistant':
+            #             langchain_history.append(AIMessage(content=content))
 
             # Execute the agent
             logger.debug("🤖 Executing LangChain agent")
+            logger.debug(f"Chat history length: {len(langchain_history)} messages")
             result = await self.agent_executor.ainvoke({
                 "input": user_input,
                 "chat_history": langchain_history
@@ -1809,43 +1858,42 @@ Please generate a natural question to ask the user for the missing information."
 
             # Process the result
             response_text = result.get('output', 'No response generated')
-            
+            logger.info(f"Agent execution completed: {response_text}")
             # Try to extract structured data from the response
             structured_data = None
             pagination_data = None
             
-            try:
-                # Look for JSON in the response - handle both single objects and arrays
-                import json
-                import re
+            # try:
+            #     # Look for JSON in the response - handle both single objects and arrays
+            #     import json
+            #     import re
                 
-                # Look for product data patterns in the response
-                json_matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
+            #     # Look for product data patterns in the response
+            #     json_matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
                 
-                for json_str in json_matches:
-                    try:
-                        parsed_json = json.loads(json_str)
+            #     for json_str in json_matches:
+            #         try:
+            #             parsed_json = json.loads(json_str)
                         
-                        # Check if this contains product data
-                        if 'products' in parsed_json or 'product' in parsed_json:
-                            structured_data = parsed_json
+            #             # Check if this contains product data
+            #             if 'products' in parsed_json or 'product' in parsed_json:
+            #                 structured_data = parsed_json
                             
-                            # Extract pagination info if present
-                            if 'pagination' in parsed_json:
-                                pagination_data = parsed_json['pagination']
-                            break
+            #                 # Extract pagination info if present
+            #                 if 'pagination' in parsed_json:
+            #                     pagination_data = parsed_json['pagination']
+            #                 break
                             
-                        # Check if this is a single product
-                        elif '_id' in parsed_json and 'name' in parsed_json:
-                            structured_data = {'product': parsed_json}
-                            break
+            #             # Check if this is a single product
+            #             elif '_id' in parsed_json and 'name' in parsed_json:
+            #                 structured_data = {'product': parsed_json}
+            #                 break
                             
-                    except json.JSONDecodeError:
-                        continue
+            #         except json.JSONDecodeError:
+            #             continue
                         
-            except Exception as e:
-                logger.debug(f"No structured data found in response: {e}")
-
+            # except Exception as e:
+            #     logger.debug(f"No structured data found in response: {e}")
             # Enhance response for product queries
             response_data = {
                 "response": response_text,
@@ -1856,17 +1904,17 @@ Please generate a natural question to ask the user for the missing information."
             }
 
             # Add metadata for frontend consumption
-            if structured_data:
-                if 'products' in structured_data:
-                    response_data['type'] = 'product_list'
-                    response_data['count'] = len(structured_data['products'])
-                elif 'product' in structured_data:
-                    response_data['type'] = 'product_detail'
-                    response_data['count'] = 1
-                else:
-                    response_data['type'] = 'structured_data'
-            else:
-                response_data['type'] = 'text_only'
+            # if structured_data:
+            #     if 'products' in structured_data:
+            #         response_data['type'] = 'product_list'
+            #         response_data['count'] = len(structured_data['products'])
+            #     elif 'product' in structured_data:
+            #         response_data['type'] = 'product_detail'
+            #         response_data['count'] = 1
+            #     else:
+            #         response_data['type'] = 'structured_data'
+            # else:
+            #     response_data['type'] = 'text_only'
 
             logger.info("✅ Chat request processed successfully")
             return response_data
