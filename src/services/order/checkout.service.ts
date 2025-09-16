@@ -134,7 +134,7 @@ export const checkout = async ({
 
     if (orderNewIdCheck?.newId) newId = orderNewIdCheck?.newId + 1;
 
-    const user = await UserRepo.findById(userId);
+    // const user = await UserRepo.findById(userId);
 
     const order = await OrderRepo.create({
       userId,

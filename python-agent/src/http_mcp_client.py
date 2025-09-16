@@ -106,8 +106,17 @@ class HTTPMCPClient:
                 
             payload = {
                 "toolName": tool_name,
-                "args": args
+                "args": args or {}
             }
+
+            # Defensive: strip any userEmail and warn on suspicious userId
+            if isinstance(payload["args"], dict):
+                if "userEmail" in payload["args"]:
+                    logger.warning("Removing disallowed field 'userEmail' from tool args before sending to MCP server")
+                    payload["args"].pop("userEmail", None)
+                u = payload["args"].get("userId")
+                if isinstance(u, str) and "@" in u:
+                    logger.warning(f"userId looks like an email ('{u}'); server will override with authenticated user.id")
             
             # Prepare headers
             headers = {"Content-Type": "application/json"}
@@ -135,7 +144,11 @@ class HTTPMCPClient:
                             error=None
                         )
                 else:
-                    error_data = await response.json()
+                    # Try parse body safely
+                    try:
+                        error_data = await response.json()
+                    except Exception:
+                        error_data = {"error": await response.text()}
                     return MCPResponse(
                         success=False,
                         error=f"HTTP {response.status}: {error_data.get('error', 'Unknown error')}"
